@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ishihara Project</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+<h1>Dynamic Ishihara Plates Project</h1>
+<div id="loading">
+    <h1 style="text-align: center">Loading...</h1>
+</div>
+<div id="app">
+    <div id="svgCircles">
+        <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="4in" height="4in" version="1.1"
+             style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision;
+             image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+             viewBox="0 0 4000 4000">
+            <defs id="svgFillColors"></defs>
+            <g id="SVG_output_figures"></g>
+        </svg>
+    </div>
+    <div id="wrapper">
+        <div id="controls">
+            <fieldset>
+                <legend>Controls</legend>
+                <label>Choose a figure:</label>
+                <select onchange="globalCurrentType=this.value">
+                    <option value="Circle" selected>Circles</option>
+                    <option value="Ellipse">Ellipses</option>
+                    <option value="Ring">Rings</option>
+                </select>
+                <br>
+                <br>
+                <label> Text Motive: </label>
+                <input type="text" maxlength="2" id="motive">
+                <button onclick="getTextMap(document.getElementById('motive').value)"> Make </button>
+                <br>
+                <br>
+                <label> Upload Image Motive: </label>
+                <input type="file" id="motiveImage" accept="image/x-png">
+                <br><br>
+                <label> Change figure-size: </label>
+                <button onclick="globalRadiusChange--"> -</button>
+                <button onclick="globalRadiusChange = 0"> |</button>
+                <button onclick="globalRadiusChange++"> +</button>
+                <br>
+                <label> Border? </label>
+                <input type="checkbox" onclick="globalBorder=!globalBorder">
+                <br>
+                <label> Generate figures every frame? </label>
+                <input type="checkbox" onclick="globalUpdate=!globalUpdate">
+                <hr>
+                <div id="minTxt">Min Radius: 3</div>
+                <input type="range" min="1" max="5" value="3" class="slider" id="min">
+                <div id="maxTxt">Max Radius: 7</div>
+                <input type="range" min="5" max="20" value="7" class="slider" id="max">
+                <br>
+                <label> Max distance between each figure: </label>
+                <input type="number" min="0" max="20" value="1" maxlength="2" id="disBtwCircles"
+                       oninput="globalMaxDistance=Number(this.value)">
+                <br>
+                <label> Try to generate </label>
+                <input type="number" value="20000" maxlength="5" step="100" min="0" max="99999" id="numOfCircles"
+                       oninput="numberOfFigures=Number(this.value)">
+                <label> figures </label>
+                <br>
+                <br>
+                <button onclick="placeCircles()"> Generate figures</button>
+                <a  id="exportOfSVG"><button onclick="exportToSVGFile()"> Download Plate</button></a>
+                <br>
+                <div id="generated"> Figures generated:</div>
+            </fieldset>
+            <br>
+            <div id="fps"></div>
+        </div>
+        <div id="colors">
+            <fieldset>
+                <legend>Colors</legend>
+                <label> How many colors in each group? </label>
+                <input type="number" value="4" min="1" max="9" id="numOfColors" maxlength="1"
+                       oninput="globalNumColors=Number(this.value) < 1 ? 1 :
+                       Number(this.value) > 9 ? this.value = 9 : Number(this.value);
+                       showColorChoice(); setColor(); drawSVG();
+                       if(Number(this.value)===0 && this.value.length) this.value=1;
+                       this.value=this.value.slice(0,this.maxLength); ">
+                <hr>
+                <div id="colorChoice"></div>
+            </fieldset>
+        </div>
+    </div>
+</div>
+<canvas id="plate" width="400" height="400"></canvas>
+<script src="js/math.js"></script>
+<script src="js/globals.js"></script>
+<script src="js/circleClass.js"></script>
+<script src="js/tools.js"></script>
+<script src="js/core.js"></script>
+</body>
+</html>
