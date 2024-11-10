@@ -83,7 +83,7 @@ function Color() {
 
   };
   return (
-    <div class="container">
+    <div className="container">
       <svg height="500" width="500" onClick={clickSVG}>
         {/* x-axis */}
         <text style={{fontSize: "19", textAnchor: "middle"}} x="50%" y="98%">x</text>
@@ -132,11 +132,22 @@ function Color() {
         </text>
         )}
 
+        {/* Confusion lines */}
+        {/* <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * 0.7455) * 0.8}%`} y1={`${10 + (100 - (100 * 0.2565)) * 0.8}%`} x2={`${10 + (100 * 0.3) * 0.8}%`} y2={`${10 + (100 - (100 * 0.5)) * 0.8}%`} />
+        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * 1.4) * 0.8}%`} y1={`${10 + (100 - (100 * -0.4)) * 0.8}%`} x2={`${10 + (100 * 0.3) * 0.8}%`} y2={`${10 + (100 - (100 * 0.5)) * 0.8}%`} />
+        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * 0.17045) * 0.8}%`} y1={`${10 + (100 - (100 * 0)) * 0.8}%`} x2={`${10 + (100 * 0.3) * 0.8}%`} y2={`${10 + (100 - (100 * 0.5)) * 0.8}%`} />
+        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * 0.17045) * 0.8}%`} y1={`${10 + (100 - (100 * 0)) * 0.8}%`} x2={`${10 + (100 * 0.4) * 0.8}%`} y2={`${10 + (100 - (100 * 0.6)) * 0.8}%`} />
+        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * 0.17045) * 0.8}%`} y1={`${10 + (100 - (100 * 0)) * 0.8}%`} x2={`${10 + (100 * 0.6) * 0.8}%`} y2={`${10 + (100 - (100 * 0.7)) * 0.8}%`} /> */}
+
+
+        {/* Protan: (0.7455, 0.2565)
+            Deutan: (1.4, -0.4)
+            Tritan: (0.17045, 0) */}
 
       </svg>
         <div ref={colorBox} style={{width: "150px", height: "150px", backgroundColor: "rgb("+ calcRGB()[0] +","+ calcRGB()[1] +","+ calcRGB()[2] +")"}}></div>
       <label>Brightness: 
-        <input type="range" min="1" max="100" value={sliderBright} onChange={changeBrightness}></input>
+        <input type="range" min="0" max="100" value={sliderBright} onChange={changeBrightness}></input>
         {sliderBright}
       </label>
 
