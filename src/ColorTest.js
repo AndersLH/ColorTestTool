@@ -88,11 +88,6 @@ function ColorTest() {
     let fpsCount = useRef(2);
     
 
-
-
-
-    let plateCtx = plate.current.getContext("2d");
-
     // Main loop
     //Original file from previous project: core.js
     
@@ -545,7 +540,7 @@ function ColorTest() {
                         <br />
                         <br />
                         <button onClick={placeCircles}>Generate figures</button>
-                        <a href={exportOfSVG}>
+                        <a href={exportOfSVG.current}>
                             <button onClick={exportToSVGFile}>Download Plate</button>
                         </a>
                         <br />
