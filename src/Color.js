@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 //xxY to sRGB code from matlab, converted to Javascript with ChatGPT. Some minor adjustments has been made to fit my code. 
 //Calculate XYZ from xyY 
 function xyy2xyz(x, y, Y) {
-  console.log("x,y,Y", x, y, Y);
+  // console.log("x,y,Y", x, y, Y);
   const X = (x * Y) / y;
   const Z = (Y * (1.0 - x - y)) / y;
   return [X, Y, Z];
@@ -18,12 +18,12 @@ function xyz2srgb(XYZ) {
     [0.0556, -0.2040, 1.0570],
   ];
 
-  // Apply transformation
+  //Apply transformation
   const sRGB = M.map(row =>
     row.reduce((sum, value, i) => sum + value * (XYZ[i] / 100), 0)
   );
 
-  // Gamma correction and scaling
+  //Gamma correction and scaling
   const gammaCorrect = (value) =>
     value <= 0.00304
       ? value * 12.92
@@ -41,7 +41,7 @@ function xyz2srgb(XYZ) {
 //Combined function to convert xyY to sRGB
 function xyy2srgb(x, y, Y) {
   const XYZ = xyy2xyz(x, y, Y);
-  console.log(xyz2srgb(XYZ));
+  // console.log(xyz2srgb(XYZ));
 
   return xyz2srgb(XYZ);
 }
@@ -71,11 +71,11 @@ function Color() {
     const svg = event.currentTarget;
     const rect = svg.getBoundingClientRect();
 
-    // Calculate the actual position within the SVG
+    //Calculate the actual position within the SVG
     const x = ((event.clientX - rect.left) / rect.width);
     const y = ((event.clientY - rect.top) / rect.height);
 
-    // Limit click coordinates to be within the grid (10% to 90%)
+    //Limit click coordinates to be within the grid (10% to 90%)
     const gridX = Math.max(0, Math.min((x - 0.1) / 0.8, 1)) * 100;
     const gridY = Math.max(0, Math.min((y - 0.1) / 0.8, 1)) * 100;
     
@@ -83,8 +83,8 @@ function Color() {
 
   };
   return (
-    <div className="container">
-      <svg height="500" width="500" onClick={clickSVG}>
+    <div>
+      <svg style={{height:"400px", width: "400px"}} onClick={clickSVG}>
         {/* x-axis */}
         <text style={{fontSize: "19", textAnchor: "middle"}} x="50%" y="98%">x</text>
         <line style={{stroke:'black', strokeWidth:'2'}} x1="90%" y1="90%" x2="8%" y2="90%" />

@@ -1,13 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import Color from './Color';
 import reportWebVitals from './reportWebVitals';
+import ColorTest from './ColorTest';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <Color />
+    <ColorTest />
   </React.StrictMode>
 );
 
