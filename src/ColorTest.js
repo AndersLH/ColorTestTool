@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import Color from "./Color";
+import ReactDOM from "react-dom";
 
 function ColorTest() {
 
@@ -301,10 +302,20 @@ function ColorTest() {
                 colorchoices.appendChild(document.createElement("br"));
                 colorchoices.appendChild(document.createElement("br"));
             }
-            let input = document.createElement("input");
-            input.type = "color";
+            // let input = document.createElement("input");
+            // input.type = "color";
+            
+            //Create custom element <Color/>
+            const input = document.createElement("div"); 
+            ReactDOM.render(
+                <Color/>,
+                input
+            );
+            
             input.id = "fil" + i;
             input.className = "fillColorsClass";
+            input.vaule = "#BB77BB";
+
             input.addEventListener("input", function () {
                 // Keep commented out, it struggles to find this particular value
                 // document.getElementById(this.id).value = this.value.replace('#', '');
@@ -540,9 +551,9 @@ function ColorTest() {
                         <br />
                         <br />
                         <button onClick={placeCircles}>Generate figures</button>
-                        {/* Eslint complains about href not exissting */}
+                        {/* Eslint complains about href not being valid */}
                         {/* eslint-disable-next-line */}
-                        <a ref={exportOfSVG}>
+                        <a ref={exportOfSVG} href="#">
                             <button onClick={exportToSVGFile}>Download Plate</button>
                         </a>
                         <br />
@@ -552,7 +563,7 @@ function ColorTest() {
                     <div ref={fps}></div>
                 </div>
                 <div ref={colors}>
-                    <fieldset style={{width: "20%"}}>
+                    <fieldset style={{width: "40%"}}>
                         <legend>Colors</legend>
                         <label> How many colors in each group? </label>
                         <input type="number" defaultValue="1" min="1" max="9" ref={numOfColors} maxLength="1"
