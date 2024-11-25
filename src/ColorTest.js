@@ -540,7 +540,9 @@ function ColorTest() {
                         <br />
                         <br />
                         <button onClick={placeCircles}>Generate figures</button>
-                        <a href={exportOfSVG.current}>
+                        {/* Eslint complains about href not exissting */}
+                        {/* eslint-disable-next-line */}
+                        <a ref={exportOfSVG}>
                             <button onClick={exportToSVGFile}>Download Plate</button>
                         </a>
                         <br />
