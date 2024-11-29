@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import Color from "./Color";
-import ReactDOM from "react-dom";
+import ReactDOM from "react-dom/client";
 
 function ColorTest() {
 
@@ -134,7 +134,6 @@ function ColorTest() {
         }
 
         if (globalDraw.current) {
-            console.log("place circles");
             globalDraw.current = false;
             if (globalUpdate.current) {
                 placeCircles();
@@ -307,9 +306,10 @@ function ColorTest() {
             
             //Create custom element <Color/>
             const input = document.createElement("div"); 
-            ReactDOM.render(
-                <Color/>,
-                input
+            // Can use existing instead
+            const root = ReactDOM.createRoot(input);
+            root.render(
+                <Color srgbValue={recieveSrgbValue}/>
             );
             
             input.id = "fil" + i;
@@ -432,12 +432,22 @@ function ColorTest() {
         a.download = "filename.svg";
     }
     
+
+    //Recieve srgb values from child <Color>
+    const [srgb, setSrgb] = useState(null);
+
+    const recieveSrgbValue = (newSrgb) => {
+        setSrgb(newSrgb); // Update state with new RGB value
+        console.log('Received <Color> child:', newSrgb, srgb);
+    };
+
     
     //Original file from previous project index.html
     
     return (
         <div>
-        <Color />
+        {/* <Color srgbValue={recieveSrgbValue}/>  */}
+
         <h1>Dynamic Ishihara Plates Project</h1>
         <div ref={loading}>
             <h1 style={{ textAlign: "center" }}>Loading...</h1>

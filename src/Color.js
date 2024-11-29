@@ -48,7 +48,7 @@ function xyy2srgb(x, y, Y) {
 
 
 
-function Color() {
+function Color({ srgbValue }) {
 
   //Click coordinates
   const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
@@ -60,7 +60,7 @@ function Color() {
   }
 
   //Change later -
-  function calcRGB(){
+  function calcSRGB(){
     return xyy2srgb((clickPosition.x / 100).toFixed(3), (1-(clickPosition.y / 100)).toFixed(3), sliderBright);
   }
   //Ref initialization
@@ -80,11 +80,12 @@ function Color() {
     const gridY = Math.max(0, Math.min((y - 0.1) / 0.8, 1)) * 100;
     
     setClickPosition({ x: gridX, y: gridY });
+    srgbValue(calcSRGB()); //Pass sRGB values to parent
 
   };
   return (
-    <div>
-      <svg style={{height:"400px", width: "400px"}} onClick={clickSVG}>
+    <div style={{height: "400px", width: "400px"}}>
+      <svg style={{height:"75%", width: "75%"}} onClick={clickSVG}>
         {/* x-axis */}
         <text style={{fontSize: "19", textAnchor: "middle"}} x="50%" y="98%">x</text>
         <line style={{stroke:'black', strokeWidth:'2'}} x1="90%" y1="90%" x2="8%" y2="90%" />
@@ -124,11 +125,12 @@ function Color() {
         {clickPosition && (
           <text style={{fontSize: "20", textAnchor: "middle", cursor: "default"}}
           x={`${10 + clickPosition.x * 0.8}%`}
-          y={`${10 + clickPosition.y * 0.8}%`}
+          y={`${11.4 + clickPosition.y * 0.8}%`}
         >
-          X: {(clickPosition.x / 100).toFixed(3)}, 
+          {/* X: {(clickPosition.x / 100).toFixed(3)}, 
           Y: {(1-(clickPosition.y / 100)).toFixed(3)}, 
-          sRGB: {calcRGB()[0]+", "+ calcRGB()[1] + ", " + calcRGB()[2]}
+          sRGB: {calcSRGB()[0]+", "+ calcSRGB()[1] + ", " + calcSRGB()[2]} */}
+          x
         </text>
         )}
 
@@ -160,7 +162,7 @@ function Color() {
 
 
       </svg>
-        <div ref={colorBox} style={{width: "150px", height: "150px", backgroundColor: "rgb("+ calcRGB()[0] +","+ calcRGB()[1] +","+ calcRGB()[2] +")"}}></div>
+        <div ref={colorBox} style={{width: "25%", height: "80%", float:"left", backgroundColor: "rgb("+ calcSRGB()[0] +","+ calcSRGB()[1] +","+ calcSRGB()[2] +")"}}></div>
       <label>Brightness: 
         <input type="range" min="0" max="100" value={sliderBright} onChange={changeBrightness}></input>
         {sliderBright}
