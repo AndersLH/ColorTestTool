@@ -313,7 +313,7 @@ function ColorTest() {
             // Can use existing instead
             const root = ReactDOM.createRoot(input);
             root.render(
-                <Color srgbValue={recieveSrgbValue}/>
+                <Color srgbValue={(value) => recieveSrgbValue(value,i)} />
             );
         
 
@@ -340,10 +340,11 @@ function ColorTest() {
                 this.data = this.value;
             });
             
+            // eslint-disable-next-line
             input2.addEventListener("input", function () {
                 let prev = this.data;
                 if (/^[a-f0-9 ]*$/i.test(this.value)) { //Checks for valid hex match
-                    document.getElementById(this.id.slice(0, -6)).value = hexVal.current;// ("#" + ((this.value.length < 6) ? "000000" : this.value));
+                    document.getElementById(this.id.slice(0, -6)).value = ("#" + ((this.value.length < 6) ? "000000" : this.value));
                     drawSVG();
                 } else this.value = prev;
             });
@@ -440,11 +441,11 @@ function ColorTest() {
 
     //Recieve srgb values from child <Color>
     let srgb = useRef(null);
-    let hexVal = useRef(null);
+    // let hexVal = useRef(null);
+    let hexList = useRef([]); //List for seperating colors from <Color> elements
 
-    const recieveSrgbValue = (newSrgb) => {
+    const recieveSrgbValue = (newSrgb, id) => {
         srgb = newSrgb; // Update state with new RGB value
-        // console.log('Received <Color> child:', srgb);
 
         //Convert from sRGB hex
         const srgbToHex = (value) => {
@@ -452,16 +453,15 @@ function ColorTest() {
             return hex.length === 1 ? '0' + hex : hex;
         };
     
-        hexVal.current = `#${srgbToHex(srgb[0])}${srgbToHex(srgb[1])}${srgbToHex(srgb[2])}`;
+        // hexVal.current = `#${srgbToHex(srgb[0])}${srgbToHex(srgb[1])}${srgbToHex(srgb[2])}`;
+        const hexTemp = `#${srgbToHex(srgb[0])}${srgbToHex(srgb[1])}${srgbToHex(srgb[2])}`;
 
-
+        hexList.current[id] = hexTemp; 
 
         for (let i = 0; i < globalNumColors * 2; i++) {
-            if (i === 0){
-                document.getElementById("fil"+i).value = hexVal.current;
-            } else {
-                document.getElementById("fil"+i).value = "#FFAAAA";
-            }
+            // document.getElementById("fil"+i).value = hexVal.current;
+            document.getElementById("fil"+i).value = hexList.current[i];
+            console.log(hexList.current[i]);
         }
 
     };
@@ -474,6 +474,7 @@ function ColorTest() {
         {/* <Color srgbValue={recieveSrgbValue}/>  */}
 
         <h1>Dynamic Ishihara Plates Project</h1>
+        {/* <button onClick={console.log(svgList )}></button> */}
         <div ref={loading}>
             <h1 style={{ textAlign: "center" }}>Loading...</h1>
         </div>
