@@ -80,7 +80,10 @@ function Color({ srgbValue }) {
     const gridY = Math.max(0, Math.min((y - 0.1) / 0.8, 1)) * 100;
     
     setClickPosition({ x: gridX, y: gridY });
-    srgbValue(calcSRGB()); //Pass sRGB values to parent
+    
+    //Pass sRGB values to parent manually, due to delayed useState update
+    srgbValue(xyy2srgb((gridX / 100).toFixed(3), (1-(gridY / 100)).toFixed(3), sliderBright)); 
+
 
   };
   return (

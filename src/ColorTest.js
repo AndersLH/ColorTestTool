@@ -239,11 +239,12 @@ function ColorTest() {
             if (globalCurrentType !== "Ring" || selectedFills[c].id === "SC1") style.innerHTML += "." + selectedFills[c].id + "{fill: " + selectedFills[c].value + "}\n";
             else style.innerHTML += `.${selectedFills[c].id}{fill: none; stroke: ${selectedFills[c].value}; stroke-width: ${2 * 10}"}\n`;
         }
+
         fills.appendChild(style); // Add new style element to "svgFillColors"
         let out = SVG_output_figures.current;    // Get element to make svg figures on
         out.innerHTML = "";                                                   // Reset element
         var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); // New Element
-        
+
         let backgroundCircle = document.createElementNS(svg.namespaceURI, "circle");
         backgroundCircle.setAttribute("id", "BackgroundCircle");
         backgroundCircle.setAttribute("class", "SC1");
@@ -292,6 +293,8 @@ function ColorTest() {
         // Make this more readable
         let colorchoices = colorChoice.current;
         colorchoices.innerHTML = "";
+
+
         
         for (let i = 0; i < globalNumColors * 2; i++) {
             if (i === 0) {
@@ -303,6 +306,7 @@ function ColorTest() {
             }
             // let input = document.createElement("input");
             // input.type = "color";
+
             
             //Create custom element <Color/>
             const input = document.createElement("div"); 
@@ -311,23 +315,24 @@ function ColorTest() {
             root.render(
                 <Color srgbValue={recieveSrgbValue}/>
             );
-            
+        
+
             input.id = "fil" + i;
             input.className = "fillColorsClass";
-            input.vaule = "#BB77BB";
+            // input.value = `${hexVal.current}`;
 
             input.addEventListener("input", function () {
                 // Keep commented out, it struggles to find this particular value
-                // document.getElementById(this.id).value = this.value.replace('#', '');
+                document.getElementById(this.id).value = this.value.replace('#', '');
                 drawSVG();
             });
-            input.value = i < globalNumColors ? "#444444" : "#BBBBBB";
+            input.value = i < globalNumColors ? "#4F44F4" : "#BBBBBB";
             colorchoices.appendChild(input);
             let label = document.createElement("label");
             label.innerHTML = " # ";
             colorchoices.appendChild(label);
             let input2 = document.createElement("input");
-            
+            input2.id = "fil" + i + "_label";
             input2.value = input.value.replace('#', '');
             input2.maxLength = 6;
             input2.style.width = "8ch";
@@ -337,8 +342,8 @@ function ColorTest() {
             
             input2.addEventListener("input", function () {
                 let prev = this.data;
-                if (/^[a-f0-9 ]*$/i.test(this.value)) {
-                    document.getElementById(this.id.slice(0, -6)).value = ("#" + ((this.value.length < 6) ? "000000" : this.value));
+                if (/^[a-f0-9 ]*$/i.test(this.value)) { //Checks for valid hex match
+                    document.getElementById(this.id.slice(0, -6)).value = hexVal.current;// ("#" + ((this.value.length < 6) ? "000000" : this.value));
                     drawSVG();
                 } else this.value = prev;
             });
@@ -434,11 +439,31 @@ function ColorTest() {
     
 
     //Recieve srgb values from child <Color>
-    const [srgb, setSrgb] = useState(null);
+    let srgb = useRef(null);
+    let hexVal = useRef(null);
 
     const recieveSrgbValue = (newSrgb) => {
-        setSrgb(newSrgb); // Update state with new RGB value
-        console.log('Received <Color> child:', newSrgb, srgb);
+        srgb = newSrgb; // Update state with new RGB value
+        // console.log('Received <Color> child:', srgb);
+
+        //Convert from sRGB hex
+        const srgbToHex = (value) => {
+            const hex = value.toString(16);
+            return hex.length === 1 ? '0' + hex : hex;
+        };
+    
+        hexVal.current = `#${srgbToHex(srgb[0])}${srgbToHex(srgb[1])}${srgbToHex(srgb[2])}`;
+
+
+
+        for (let i = 0; i < globalNumColors * 2; i++) {
+            if (i === 0){
+                document.getElementById("fil"+i).value = hexVal.current;
+            } else {
+                document.getElementById("fil"+i).value = "#FFAAAA";
+            }
+        }
+
     };
 
     
