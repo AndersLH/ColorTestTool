@@ -126,7 +126,8 @@ function ColorTest() {
         fpsb.current = fpsn;
         
         if(fps.current){
-            fps.current.innerHTML = `Fps: ${Math.floor(fpsCount.current)}`;
+            // Remove comment to get broken fps back (not relevant for new project)
+            // fps.current.innerHTML = `Fps: ${Math.floor(fpsCount.current)}`;
         }
         
         if (!globalDraw.current) {
@@ -200,7 +201,6 @@ function ColorTest() {
     }
     
     function getTextMap(text) { // Makes a motive from a text snippet (1-2 characters (Utf-8))
-        motive.current.focus();        // Focus motive text field for faster input
         
         let canvas = document.createElement("canvas");     // Make a new canvas element
         let ctx = canvas.getContext('2d');                 // Get draw context from canvas
@@ -441,8 +441,14 @@ function ColorTest() {
 
     //Recieve srgb values from child <Color>
     let srgb = useRef(null);
-    // let hexVal = useRef(null);
     let hexList = useRef([]); //List for seperating colors from <Color> elements
+
+    //List of svgs
+    let svgList = useRef([]);
+    //Div for all svg print
+    let svgDiv = useRef(null);
+
+
 
     const recieveSrgbValue = (newSrgb, id) => {
         srgb = newSrgb; // Update state with new RGB value
@@ -453,28 +459,132 @@ function ColorTest() {
             return hex.length === 1 ? '0' + hex : hex;
         };
     
-        // hexVal.current = `#${srgbToHex(srgb[0])}${srgbToHex(srgb[1])}${srgbToHex(srgb[2])}`;
         const hexTemp = `#${srgbToHex(srgb[0])}${srgbToHex(srgb[1])}${srgbToHex(srgb[2])}`;
 
         hexList.current[id] = hexTemp; 
 
+        //Set style color for circles
         for (let i = 0; i < globalNumColors * 2; i++) {
-            // document.getElementById("fil"+i).value = hexVal.current;
             document.getElementById("fil"+i).value = hexList.current[i];
-            console.log(hexList.current[i]);
         }
 
+
+
+    //   Add each SVG string into the div
+    // svgDiv.current.innerHTML = "";
+    //   svgList.current.forEach((svgContent) => {
+    //     const container = document.createElement('div');
+    //     container.innerHTML = svgContent; // Set the SVG content
+    //     svgDiv.current.appendChild(container); // Append the div to the target div
+    //   });
+      
+
+
+    //List of elements to change
+    //Increase size 
+    //Add border?
+    //Increase noise level of color on confusion line
+    //Change background color/contrast - related to size?
+    //Geometric shapes - related to size?
+
+
+    //Confusion lines table
+    //Tables, one for each graph
+    //Generate e.g. 4 lines on a graph
+    //  Lines are seperated by x amount
+    //  Donts on lines are seperated by y amount
+    //  Avoids white point by z radius
+    //Checkmarks in table for which line. Use refs. Highlight selected.
+    //If multiple colors/dots, add rows in table. 
+    //Have checkmark with preview or color values, maybe both in table
+
+    //Should have a save button
+    //Once saved, will be basis for the dynamic version. 
+    
+    //Button for regenerating new random lines
+
+    //Super optional: make your own line
+
+
+    //Presentation test
+    //Have some "presentation" mode that can be switched back and forth with e.g. "*"
+    //Pre mode should hide all other svgs for proper styling - display:none does not work, needs to remove
+
+    //Cannot back and forth, have to reload
+
+
+
+    // IDEA: What if everything happens on screen, 
+    // Click "start" hides menu, then we keep that one thing on screen at all times
+    // Only save for later use maybe 
+
+    //IDEA: Use a single confusion line for a single full test?
+    //This would be the only manual inpiut at the start
+
+    //PROBLEM: default values suck
+    //PROBLEM: second creation had null background (black)
+
+
     };
+
+    //Generate new figures from button push
+    let placeCirclesButton = useRef(null);
+
+
+    // ====== Figure size ====== //
+    //Useffect needed as it tries accessing before DOM loads
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+          const key = event.key;
+          //Ensure it is a-z or 0-9
+          if (/^[a-z0-9]$/.test(key)) {
+            placeCirclesButton.current.click();
+            
+            //If correct, new character, if incorrect, easier test
+            //Limit on > 3 due to figure turning worse after that value
+            if(motive.current.value === key || globalRadiusChange > 3){
+                //Possible values for test
+                const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+                const randomIndex = Math.floor(Math.random() * chars.length);
+                //Pick random value for next test
+                motive.current.value = chars[randomIndex];
+                getTextMap(chars[randomIndex]);
+                // eslint-disable-next-line
+                globalRadiusChange = 0;
+
+                //If correct add to list
+                svgList.current.push(svgCircles.current.innerHTML);
+                //TODO: if failed and it reaches globalRadisuChange 4, make special case, we still want to see it
+            } else{
+                //If incorrect, increase figure size
+                globalRadiusChange++;
+            }
+
+          }
+        };
+    
+        window.addEventListener('keydown', handleKeyDown);
+    
+        //Prevent double-clicking from each press
+        return () => {
+          window.removeEventListener('keydown', handleKeyDown);
+        };
+      }, []);
+
 
     
     //Original file from previous project index.html
     
     return (
         <div>
-        {/* <Color srgbValue={recieveSrgbValue}/>  */}
+            <h1>Dynamic Ishihara Plates Project</h1>
+        <button onClick={() => console.log(svgList.current.at(-1))}>Last one</button>
+        <button onClick={() => console.log(svgList.current)}>All</button>
 
-        <h1>Dynamic Ishihara Plates Project</h1>
-        {/* <button onClick={console.log(svgList )}></button> */}
+
+
+        <div ref={svgDiv}></div>
+
         <div ref={loading}>
             <h1 style={{ textAlign: "center" }}>Loading...</h1>
         </div>
@@ -586,7 +696,7 @@ function ColorTest() {
                         <label> figures </label>
                         <br />
                         <br />
-                        <button onClick={placeCircles}>Generate figures</button>
+                        <button onClick={placeCircles} ref={placeCirclesButton}>Generate figures</button>
                         {/* Eslint complains about href not being valid */}
                         {/* eslint-disable-next-line */}
                         <a ref={exportOfSVG} href="#">
@@ -632,8 +742,8 @@ function ColorTest() {
             </div>
         </div>
         <canvas ref={plate} width="400" height="400"></canvas>
-    </div>
-  );
+        </div>
+    );
 }
 
 export default ColorTest;
