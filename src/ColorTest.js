@@ -504,7 +504,7 @@ function ColorTest() {
     //Pick 1 of e.g. 4 columns (highlight confusion line)
     //Each row is a color, e.g. 3 rows = 1 for each  
 
-    //NOTE: We only need one now, one graph
+    //NOTE: We only need one single now, one graph
     //(add option for customizing later)
 
 
