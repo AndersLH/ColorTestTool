@@ -487,6 +487,7 @@ function ColorTest() {
     //Change background color/contrast - related to size?
     //Geometric shapes - related to size?
 
+    //Color image on background
 
     //Confusion lines table
     //Tables, one for each graph
@@ -497,6 +498,16 @@ function ColorTest() {
     //Checkmarks in table for which line. Use refs. Highlight selected.
     //If multiple colors/dots, add rows in table. 
     //Have checkmark with preview or color values, maybe both in table
+
+    //One table
+    //3 buttons: proton, deuatn, tritan
+    //Pick 1 of e.g. 4 columns (highlight confusion line)
+    //Each row is a color, e.g. 3 rows = 1 for each  
+
+    //NOTE: We only need one now, one graph
+    //(add option for customizing later)
+
+
 
     //Should have a save button
     //Once saved, will be basis for the dynamic version. 

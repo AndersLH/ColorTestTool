@@ -84,8 +84,27 @@ function Color({ srgbValue }) {
     //Pass sRGB values to parent manually, due to delayed useState update
     srgbValue(xyy2srgb((gridX / 100).toFixed(3), (1-(gridY / 100)).toFixed(3), sliderBright)); 
 
-
   };
+
+
+  //Global confusion line values
+  const protan = {x: 0.7455, y: 0.2565};
+  // const deutan = {x: 1.4, y: -0.4};
+  // const tritan = {x: 0.17045, y: 0};
+
+
+  //Interpolate and find a point t on line from x1,y1 to x2,y2 
+  function interpolate(x1, y1, x2, y2, t) {
+
+    //Add interpolation to sRGB triangle to ensure it is within boundaries
+    
+
+    const x = x1 + t * (x2 - x1);
+    const y = y1 + t * (y2 - y1);
+    return {x: x,y: y };
+  }
+
+
   return (
     <div style={{height: "400px", width: "400px"}}>
       <svg style={{height:"75%", width: "75%"}} onClick={clickSVG}>
@@ -137,8 +156,15 @@ function Color({ srgbValue }) {
         </text>
         )}
 
+
+        
         {/* Confusion lines */}
         <line style={{stroke:'red', strokeWidth:'2'}} x1={`${10 + (100 * 0.7455) * 0.8}%`} y1={`${10 + (100 - (100 * 0.2565)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * 0.55)) * 0.8}%`} />
+        {/* <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={interpolate(protan.x,protan.y,0.8,0.8,1).x} cy={`${10 + (100 - (100 * 0.32903)) * 0.8}%`} /> */}
+        <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * interpolate(protan.x,protan.y,0.1,0.55,0.5).x) * 0.8}%`} cy={`${10 + (100 - (100 * interpolate(protan.x,protan.y,0.1,0.55,0.5).y)) * 0.8}%`} />
+
+        
+
         <line style={{stroke:'red', strokeWidth:'2'}} x1={`${10 + (100 * 0.7455) * 0.8}%`} y1={`${10 + (100 - (100 * 0.2565)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * 0.65)) * 0.8}%`} />
         {/* <line style={{stroke:'green', strokeWidth:'2'}} x1={`${10 + (100 * 1.4) * 0.8}%`} y1={`${10 + (100 - (100 * -0.4)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * 0.6)) * 0.8}%`} />
         <line style={{stroke:'green', strokeWidth:'2'}} x1={`${10 + (100 * 1.4) * 0.8}%`} y1={`${10 + (100 - (100 * -0.4)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * 0.5)) * 0.8}%`} />
@@ -153,7 +179,7 @@ function Color({ srgbValue }) {
             Tritan: (0.17045, 0) */}
 
         {/* White point D65 Wikipedia, find good paper instead */}
-        <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * 0.31272) * 0.8}%`} cy={`${10 + (100 - (100 * 0.32903)) * 0.8}%`} />
+        <circle style={{stroke:'grey', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * 0.31272) * 0.8}%`} cy={`${10 + (100 - (100 * 0.32903)) * 0.8}%`} />
 
 
         {/* Possibly inaccurate sRGB triangle, find good source */}
