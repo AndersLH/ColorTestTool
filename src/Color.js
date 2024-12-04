@@ -125,8 +125,9 @@ function Color({ srgbValue }) {
   let numConfusionLines = 5;
   //Temporary store lines and wait for refresh button generate new ones
   let [generateNewCF, setGenerateNewCF] = useState(true);
-  // let dList = [];
-  // let tList = [];
+  //Decoy state, it exists to help update the DOM as the table colors lags behind on state without it
+  let [decoyState, setDecoyState] = useState(true);
+
 
   //Calculate an even random split of confusion lines generated
   function calcConfusionLine(i, min, max){
@@ -139,11 +140,12 @@ function Color({ srgbValue }) {
     let retNum = Math.random() * (newMax - newMin) + newMin;
 
     //Add to array for storage if refresh button has been pressed
-    if (generateNewCF){
+    if (generateNewCF && decoyState){
       cfList[i] = retNum;
 
       if(i === (numConfusionLines - 1)){
         setGenerateNewCF(false);
+        setDecoyState(false);
       }
 
     }    
@@ -172,21 +174,26 @@ function Color({ srgbValue }) {
 
   //TODO: REMOVE and CHANGE to parent value
   const tempColorAmount = 4;
-
+ 
   //Force re-render to ensure table is updated (if no re-render happens, it stays 1 DOM state "behind")
+  //STILL PROBLEM
   useEffect(() => {
-    setGenerateNewCF(true);
+    // setGenerateNewCF(true);
+    setDecoyState(true);
   }, [listColors]);
 
   return (
     <div>
       <div>
         <h3>Type of color confusion lines:</h3>
+        {/* <button value={listColors} onClick={() => {setGenerateNewCF(true); setDecoyState(true);}}>Generate new lines</button> <br/> */}
+        {/* <button onClick={() => setListColors}>Generate new lines</button> <br/> */}
 
         {/* Dropdown list with color types */}
         <select value={listColors} onChange={(e) => {
           setListColors(e.target.value); 
           setGenerateNewCF(true); 
+          setDecoyState(true)
         }}>
           <option value="prot">Protanopia</option>
           <option value="deut">Deuteranopia</option>
