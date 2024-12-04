@@ -1,5 +1,5 @@
 import './Color.css';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 //xxY to sRGB code from matlab, converted to Javascript with ChatGPT. Some minor adjustments has been made to fit my code. 
 //Calculate XYZ from xyY 
@@ -33,8 +33,6 @@ function xyz2srgb(XYZ) {
   );
 
   return [Math.round(sR), Math.round(sG), Math.round(sB)];
-  // return Math.round(sR) + ", " + Math.round(sG) + ", " + Math.round(sB);
-
 }
 
 //Combined function to convert xyY to sRGB
@@ -175,6 +173,11 @@ function Color({ srgbValue }) {
   //TODO: REMOVE and CHANGE to parent value
   const tempColorAmount = 4;
 
+  //Force re-render to ensure table is updated (if no re-render happens, it stays 1 DOM state "behind")
+  useEffect(() => {
+    setGenerateNewCF(true);
+  }, [listColors]);
+
   return (
     <div>
       <div>
@@ -212,7 +215,7 @@ function Color({ srgbValue }) {
                     ) : (
                       // <th key={j + "dot"} style={{backgroundColor: document.getElementById("0-dot") ? document.getElementById("0-dot").style.stroke : "grey" }}></th>
                       //If-check to make sure the element is loaded in. Calculate color and set cell to be the color of the correspoding confusion dot
-                      <th key={j + "dot"} style={{backgroundColor: document.getElementById(`${j-1}-line-${i-1}-dot`) ? srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-y")*100)) : "grey" }}>{`${j}-line-${i}-dot`}</th>
+                      <th key={j + "dot"} style={{backgroundColor: document.getElementById(`${j-1}-line-${i-1}-dot`) ? srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-y")*100)) : "grey" }}></th>
                     )
                   ) 
                 }
