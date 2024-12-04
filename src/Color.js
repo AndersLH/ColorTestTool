@@ -61,9 +61,14 @@ function Color({ srgbValue }) {
     setSliderBright(event.target.value);
   }
 
-  //Change later -
-  function calcSRGB(){
+  //SRGB functino based on cursor click, old implementation for early testing
+  function calcSRGBClick(){
     return xyy2srgb((clickPosition.x / 100).toFixed(3), (1-(clickPosition.y / 100)).toFixed(3), sliderBright);
+  }
+
+  //Calculate sRGB values from x,y coordinates and slider brightness
+  function calcSRGB(x,y){
+    return xyy2srgb((x / 100).toFixed(3), (1-(y / 100)).toFixed(3), sliderBright);
   }
   //Ref initialization
   const colorBox = useRef(null);
@@ -89,10 +94,15 @@ function Color({ srgbValue }) {
   };
 
 
-  //Global confusion line values
-  const protan = {x: 0.7455, y: 0.2565};
-  const deutan = {x: 1.4, y: -0.4};
-  const tritan = {x: 0.17045, y: 0};
+  //Global confusion line values 
+  //x1 and y1 from color science papers as the point where the confusion lines start
+  //x2 and y2 are points to actually create a line from the confusion line point, manually found and tested
+  //stat are the x or y coordinates the lines will stop at, they remain static
+  const protan = {x1: 0.7455, y1: 0.2565, x2: 0.14, y2: 0.67, stat:0.1}; 
+  const deutan = {x1: 1.4, y1: -0.4, x2: 0.3, y2: 0.74, stat:0.1}; 
+  const tritan = {x1: 0.17045, y1: 0, x2: 0.35, y2: 0.95, stat:0.7};
+
+
 
 
   //Interpolate and find a point t on line from x1,y1 to x2,y2 
@@ -133,53 +143,74 @@ function Color({ srgbValue }) {
         setGenerateNewCF(false);
       }
 
-    }
+    }    
 
     return cfList[i];
   }
+
+
+
+  //Calculate the dots and colors on the dots on a confusion line
+  function calcConfusionDot(x1, y1, x2, y2, stat, xCoor, i,j){
+
+    //Calculate the dots based on their respective confusion lines and interpolate
+    //TODO random interpolation inside triangle, CURRENTLY STATIC
+    let dot;
+    if(xCoor){ //Checks if x2 and y2 coordinates need to be swapped depending on the confusion line, tritan differs from deutan and protan
+      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,(0.3+j/10));
+    } else {
+      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),(0.3+j/10));
+    }
+
+    let color = calcSRGB(100*dot.x,100-100*dot.y);
+    console.log(color);
+
+    return {x: dot.x, y: dot.y};
+  }
+
+  //TODO: REMOVE and CHANGE to parent value
+  const tempColorAmount = 4;
 
   return (
     <div>
       <div>
         <h3>Type of color confusion lines:</h3>
         <button onClick={() => setGenerateNewCF(true)}>Generate new lines</button> <br/>
+        {/* <button onClick={() => console.log(document.getElementById(1+"dd").cx.baseVal.value)}>PRINT</button> <br/> */}
+      
+
         <label><input type="radio" name="colorType"  checked={radioColors === "prot"} onChange={() => {setRadioColors("prot"); setGenerateNewCF(true);}}/>Protanopia</label>
         <label><input type="radio" name="colorType"  checked={radioColors === "deut"} onChange={() => {setRadioColors("deut"); setGenerateNewCF(true);}}/>Deuteranopia</label>
         <label><input type="radio" name="colorType"  checked={radioColors === "trit"} onChange={() => {setRadioColors("trit"); setGenerateNewCF(true);}}/>Tritanopia</label>
       <table>
         <tbody>
-        <tr>
-          <th></th>
-          <th><label>Line 1<br/><input type="radio" name="colorLine"></input></label></th>
-          <th><label>Line 2<br/><input type="radio" name="colorLine"></input></label></th>
-          <th><label>Line 3<br/><input type="radio" name="colorLine"></input></label></th>
-          <th><label>Line 4<br/><input type="radio" name="colorLine"></input></label></th>
-          <th><label>Line 5<br/><input type="radio" name="colorLine"></input></label></th>
-        </tr>
-        <tr>
-          <th>Primary1</th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-        </tr>
-        <tr>
-          <th>Secondary1</th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-        </tr>
-        <tr>
-          <th>Background1</th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-        </tr>
+
+        {
+          Array.from(
+            { length: tempColorAmount },
+            (_, i) => (
+              <React.Fragment key={i + "line"}>
+                <tr>
+                  {
+                Array.from(
+                  //Length NUMBER HAS TO BE RETRIEVED FORM GLOBAL COLORS PARENT
+                  { length: numConfusionLines+1 },
+                    (_, j) => i === 0 && j === 0 ? (
+                      <th></th>
+                    ) : i === 0 ? (
+                      <th><label>Line {j}<br/><input type="radio" name="colorLine"></input></label></th>
+                    ) : j === 0 ? (
+                      <th>Color {i}</th>
+                    ) : (
+                      <th></th>
+                    )
+                  ) 
+                }
+                </tr>
+              </React.Fragment>
+            )
+          )
+        }
         </tbody>
       </table>
       </div> 
@@ -188,36 +219,81 @@ function Color({ srgbValue }) {
 
 
         {/* Dynamic creation of confusion lines */}
+        {/* Protan */}
         {
           Array.from(
             { length: numConfusionLines },
             (_, i) => radioColors === "prot" ? (
-              <line key={i+"p"} style={{stroke:'red', strokeWidth:'2'}} x1={`${10 + (100 * protan.x) * 0.8}%`} y1={`${10 + (100 - (100 * protan.y)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * calcConfusionLine(i,0.14,0.67))) * 0.8}%`} />
+              <React.Fragment key={i + "line"}>
+                <line key={i+"p"} style={{stroke:'red', strokeWidth:'2'}} 
+                  x1={`${10 + (100 * protan.x1) * 0.8}%`} 
+                  y1={`${10 + (100 - (100 * protan.y1)) * 0.8}%`} 
+                  x2={`${10 + (100 * protan.stat) * 0.8}%`} 
+                  y2={`${10 + (100 - (100 * calcConfusionLine(i,protan.x2,protan.y2))) * 0.8}%`} //0.14 and 0.67 values found manually through testing
+                  /> 
+                  {
+                Array.from(
+                  //Length NUMBER HAS TO BE RETRIEVED FORM GLOBAL COLORS PARENT
+                  { length: tempColorAmount },
+                    (_, j) => (
+                      <circle key={j+"dot-"+i+"t"} id={j+"dd"} style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
+                        cx={`${10 + (100 * calcConfusionDot(protan.x1, protan.y1, protan.x2, protan.y2, protan.stat, false, i,j).x) * 0.8}%`} 
+                        cy={`${10 + (100 - (100 * calcConfusionDot(protan.x1, protan.y1, protan.x2, protan.y2, protan.stat, false, i,j).y)) * 0.8}%`} />    
+                    )
+                  )
+                }
+              </React.Fragment>
             ) : null
           )
         }
 
+        {/* Deutan */}
         { 
           Array.from(
             { length: numConfusionLines },
             (_, i) => radioColors === "deut" ? (
-              <line key={i+"d"} style={{stroke:'green', strokeWidth:'2'}} x1={`${10 + (100 * deutan.x) * 0.8}%`} y1={`${10 + (100 - (100 * deutan.y)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * calcConfusionLine(i,0.3,0.74))) * 0.8}%`} />
+              <React.Fragment key={i + "line"}>
+                <line key={i+"d"} style={{stroke:'green', strokeWidth:'2'}} 
+                  x1={`${10 + (100 * deutan.x1) * 0.8}%`} 
+                  y1={`${10 + (100 - (100 * deutan.y1)) * 0.8}%`} 
+                  x2={`${10 + (100 * deutan.stat) * 0.8}%`} 
+                  y2={`${10 + (100 - (100 * calcConfusionLine(i,deutan.x2,deutan.y2))) * 0.8}%`} 
+                  /> 
+                  {
+                  Array.from(
+                    //Length NUMBER HAS TO BE RETRIEVED FORM GLOBAL COLORS PARENT
+                    { length: tempColorAmount },
+                    (_, j) => (
+                      <circle key={j+"dot-"+i+"t"} id={j+"dd"} style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
+                        cx={`${10 + (100 * calcConfusionDot(deutan.x1, deutan.y1, deutan.x2, deutan.y2, deutan.stat, false, i,j).x) * 0.8}%`} 
+                        cy={`${10 + (100 - (100 * calcConfusionDot(deutan.x1, deutan.y1, deutan.x2, deutan.y2, deutan.stat, false, i,j).y)) * 0.8}%`} />    
+                    )
+                  )
+                }
+              </React.Fragment>
             ) : null
           )
         }
 
+        {/* Tritan */}
         {
           Array.from(
             { length: numConfusionLines },
             (_, i) => radioColors === "trit" ? (
               <React.Fragment key={i + "line"}>
-                <line key={i+"t"} style={{stroke:'blue', strokeWidth:'2'}} x1={`${10 + (100 * tritan.x) * 0.8}%`} y1={`${10 + (100 - (100 * tritan.y)) * 0.8}%`} x2={`${10 + (100 * calcConfusionLine(i,0.35,0.95)) * 0.8}%`} y2={`${10 + (100 - (100 * 0.7)) * 0.8}%`} />
+                <line key={i+"t"} style={{stroke:'blue', strokeWidth:'2'}} 
+                  x1={`${10 + (100 * tritan.x1) * 0.8}%`} 
+                  y1={`${10 + (100 - (100 * tritan.y1)) * 0.8}%`} 
+                  x2={`${10 + (100 * calcConfusionLine(i,tritan.x2,tritan.y2)) * 0.8}%`}
+                  y2={`${10 + (100 - (100 * tritan.stat)) * 0.8}%`} />
                 {
                   Array.from(
                     //Length NUMBER HAS TO BE RETRIEVED FORM GLOBAL COLORS PARENT
-                    { length: 2 },
+                    { length: tempColorAmount },
                     (_, j) => (
-                      <circle key={j+"dot-"+i+"t"} style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * interpolate(protan.x,protan.y,0.1,0.55,0.7).x) * 0.8}%`} cy={`${10 + (100 - (100 * interpolate(protan.x,protan.y,0.1,0.55,0.7).y)) * 0.8}%`} />    
+                      <circle key={j+"dot-"+i+"t"} id={j+"dd"} style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
+                        cx={`${10 + (100 * calcConfusionDot(tritan.x1, tritan.y1, tritan.x2, tritan.y2, tritan.stat, true, i,j).x) * 0.8}%`} 
+                        cy={`${10 + (100 - (100 * calcConfusionDot(tritan.x1, tritan.y1, tritan.x2, tritan.y2, tritan.stat, true, i,j).y)) * 0.8}%`} />    
                     )
                   )
                 }
@@ -229,12 +305,12 @@ function Color({ srgbValue }) {
 
 
         {/* Confusion lines */}
-        {/* <line style={{stroke:'red', strokeWidth:'2'}} x1={`${10 + (100 * protan.x) * 0.8}%`} y1={`${10 + (100 - (100 * protan.y)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * 0.55)) * 0.8}%`} /> */}
+        {/* <line style={{stroke:'red', strokeWidth:'2'}} x1={`${10 + (100 * protan.x1) * 0.8}%`} y1={`${10 + (100 - (100 * protan.y1)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * 0.55)) * 0.8}%`} /> */}
 
         {/* Points interpolated on confusion line */}
-        {/* <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * interpolate(protan.x,protan.y,0.1,0.55,0.5).x) * 0.8}%`} cy={`${10 + (100 - (100 * interpolate(protan.x,protan.y,0.1,0.55,0.5).y)) * 0.8}%`} />
-        <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * interpolate(protan.x,protan.y,0.1,0.55,0.6).x) * 0.8}%`} cy={`${10 + (100 - (100 * interpolate(protan.x,protan.y,0.1,0.55,0.6).y)) * 0.8}%`} />
-        <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * interpolate(protan.x,protan.y,0.1,0.55,0.7).x) * 0.8}%`} cy={`${10 + (100 - (100 * interpolate(protan.x,protan.y,0.1,0.55,0.7).y)) * 0.8}%`} /> */}
+        {/* <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.5).x) * 0.8}%`} cy={`${10 + (100 - (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.5).y)) * 0.8}%`} />
+        <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.6).x) * 0.8}%`} cy={`${10 + (100 - (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.6).y)) * 0.8}%`} />
+        <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.7).x) * 0.8}%`} cy={`${10 + (100 - (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.7).y)) * 0.8}%`} /> */}
 
 
         {/* Values for edges for each coordinate. Randome values between these are the way to go for t value */}
@@ -243,16 +319,16 @@ function Color({ srgbValue }) {
         {/* Trit: 0.35x, 0.7y    -   0.95x, 0.7y */}
 
 
-        {/* <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * interpolate(protan.x,protan.y,0.1,0.55,0.7).x) * 0.8}%`} cy={`${10 + (100 - (100 * interpolate(protan.x,protan.y,0.1,0.55,0.7).y)) * 0.8}%`} /> */}
+        {/* <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.7).x) * 0.8}%`} cy={`${10 + (100 - (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.7).y)) * 0.8}%`} /> */}
 
         
 
 
-        {/* <line style={{stroke:'green', strokeWidth:'2'}} x1={`${10 + (100 * deutan.x) * 0.8}%`} y1={`${10 + (100 - (100 * deutan.y)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * 0.6)) * 0.8}%`} />
-        <line style={{stroke:'green', strokeWidth:'2'}} x1={`${10 + (100 * deutan.x) * 0.8}%`} y1={`${10 + (100 - (100 * deutan.y)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * 0.3)) * 0.8}%`} />
-        <line style={{stroke:'blue', strokeWidth:'2'}} x1={`${10 + (100 * tritan.x) * 0.8}%`} y1={`${10 + (100 - (100 * tritan.y)) * 0.8}%`} x2={`${10 + (100 * 0.35) * 0.8}%`} y2={`${10 + (100 - (100 * 0.7)) * 0.8}%`} />
-        <line style={{stroke:'blue', strokeWidth:'2'}} x1={`${10 + (100 * tritan.x) * 0.8}%`} y1={`${10 + (100 - (100 * tritan.y)) * 0.8}%`} x2={`${10 + (100 * 0.5) * 0.8}%`} y2={`${10 + (100 - (100 * 0.8)) * 0.8}%`} />
-        <line style={{stroke:'blue', strokeWidth:'2'}} x1={`${10 + (100 * tritan.x) * 0.8}%`} y1={`${10 + (100 - (100 * tritan.y)) * 0.8}%`} x2={`${10 + (100 * 0.6) * 0.8}%`} y2={`${10 + (100 - (100 * 0.7)) * 0.8}%`} /> */}
+        {/* <line style={{stroke:'green', strokeWidth:'2'}} x1={`${10 + (100 * deutan.x1) * 0.8}%`} y1={`${10 + (100 - (100 * deutan.y1)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * 0.6)) * 0.8}%`} />
+        <line style={{stroke:'green', strokeWidth:'2'}} x1={`${10 + (100 * deutan.x1) * 0.8}%`} y1={`${10 + (100 - (100 * deutan.y1)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * 0.3)) * 0.8}%`} />
+        <line style={{stroke:'blue', strokeWidth:'2'}} x1={`${10 + (100 * tritan.x1) * 0.8}%`} y1={`${10 + (100 - (100 * tritan.y1)) * 0.8}%`} x2={`${10 + (100 * 0.35) * 0.8}%`} y2={`${10 + (100 - (100 * 0.7)) * 0.8}%`} />
+        <line style={{stroke:'blue', strokeWidth:'2'}} x1={`${10 + (100 * tritan.x1) * 0.8}%`} y1={`${10 + (100 - (100 * tritan.y1)) * 0.8}%`} x2={`${10 + (100 * 0.5) * 0.8}%`} y2={`${10 + (100 - (100 * 0.8)) * 0.8}%`} />
+        <line style={{stroke:'blue', strokeWidth:'2'}} x1={`${10 + (100 * tritan.x1) * 0.8}%`} y1={`${10 + (100 - (100 * tritan.y1)) * 0.8}%`} x2={`${10 + (100 * 0.6) * 0.8}%`} y2={`${10 + (100 - (100 * 0.7)) * 0.8}%`} /> */}
 
         {/* Use interpolation to find line between */}
 
@@ -303,7 +379,7 @@ function Color({ srgbValue }) {
         >
           {/* X: {(clickPosition.x / 100).toFixed(3)}, 
           Y: {(1-(clickPosition.y / 100)).toFixed(3)}, 
-          sRGB: {calcSRGB()[0]+", "+ calcSRGB()[1] + ", " + calcSRGB()[2]} */}
+          sRGB: {calcSRGBClick()[0]+", "+ calcSRGBClick()[1] + ", " + calcSRGBClick()[2]} */}
           x
         </text>
         )}
@@ -320,7 +396,7 @@ function Color({ srgbValue }) {
 
       </svg>
 
-      <div ref={colorBox} style={{width: "25%", height: "80%", float:"left", backgroundColor: "rgb("+ calcSRGB()[0] +","+ calcSRGB()[1] +","+ calcSRGB()[2] +")"}}></div>
+      <div ref={colorBox} style={{width: "25%", height: "80%", float:"left", backgroundColor: "rgb("+ calcSRGBClick()[0] +","+ calcSRGBClick()[1] +","+ calcSRGBClick()[2] +")"}}></div>
       <label>Brightness: 
         <input type="range" min="0" max="100" value={sliderBright} onChange={changeBrightness}></input>
         {sliderBright}
