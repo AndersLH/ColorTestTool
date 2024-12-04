@@ -313,7 +313,7 @@ function ColorTest() {
             // Can use existing instead
             const root = ReactDOM.createRoot(input);
             root.render(
-                <Color srgbValue={(value) => recieveSrgbValue(value,i)} />
+                // <Color srgbValue={(value) => recieveSrgbValue(value,i)} />
             );
         
 
@@ -595,7 +595,7 @@ function ColorTest() {
         <button onClick={() => console.log(svgList.current.at(-1))}>Last one</button>
         <button onClick={() => console.log(svgList.current)}>All</button>
 
-
+        <Color srgbValue={(value) => recieveSrgbValue(value,1)}/>
 
         <div ref={svgDiv}></div>
 

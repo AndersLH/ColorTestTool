@@ -4,7 +4,6 @@ import React, { useState, useRef } from 'react';
 //xxY to sRGB code from matlab, converted to Javascript with ChatGPT. Some minor adjustments has been made to fit my code. 
 //Calculate XYZ from xyY 
 function xyy2xyz(x, y, Y) {
-  // console.log("x,y,Y", x, y, Y);
   const X = (x * Y) / y;
   const Z = (Y * (1.0 - x - y)) / y;
   return [X, Y, Z];
@@ -41,8 +40,6 @@ function xyz2srgb(XYZ) {
 //Combined function to convert xyY to sRGB
 function xyy2srgb(x, y, Y) {
   const XYZ = xyy2xyz(x, y, Y);
-  // console.log(xyz2srgb(XYZ));
-
   return xyz2srgb(XYZ);
 }
 
@@ -68,8 +65,16 @@ function Color({ srgbValue }) {
 
   //Calculate sRGB values from x,y coordinates and slider brightness
   function calcSRGB(x,y){
+    y = 100-y; //Inverted y-axis in web
     return xyy2srgb((x / 100).toFixed(3), (1-(y / 100)).toFixed(3), sliderBright);
   }
+
+  //Convert an array of RGB to a hex value
+  function srgbToHex([r, g, b]) {
+    const toHex = (value) => value.toString(16).padStart(2, '0').toUpperCase();
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+
   //Ref initialization
   const colorBox = useRef(null);
 
@@ -116,7 +121,7 @@ function Color({ srgbValue }) {
     return {x: x,y: y };
   }
 
-  let [radioColors,setRadioColors] = useState("prot");
+  let [listColors,setListColors] = useState("prot");
 
   //Number of generated confusion lines
   let numConfusionLines = 5;
@@ -162,8 +167,7 @@ function Color({ srgbValue }) {
       dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),(0.3+j/10));
     }
 
-    let color = calcSRGB(100*dot.x,100-100*dot.y);
-    console.log(color);
+    // let color = calcSRGB(100*dot.x,100-100*dot.y);
 
     return {x: dot.x, y: dot.y};
   }
@@ -175,34 +179,40 @@ function Color({ srgbValue }) {
     <div>
       <div>
         <h3>Type of color confusion lines:</h3>
-        <button onClick={() => setGenerateNewCF(true)}>Generate new lines</button> <br/>
-        {/* <button onClick={() => console.log(document.getElementById(1+"dd").cx.baseVal.value)}>PRINT</button> <br/> */}
-      
 
-        <label><input type="radio" name="colorType"  checked={radioColors === "prot"} onChange={() => {setRadioColors("prot"); setGenerateNewCF(true);}}/>Protanopia</label>
-        <label><input type="radio" name="colorType"  checked={radioColors === "deut"} onChange={() => {setRadioColors("deut"); setGenerateNewCF(true);}}/>Deuteranopia</label>
-        <label><input type="radio" name="colorType"  checked={radioColors === "trit"} onChange={() => {setRadioColors("trit"); setGenerateNewCF(true);}}/>Tritanopia</label>
+        {/* Dropdown list with color types */}
+        <select value={listColors} onChange={(e) => {
+          setListColors(e.target.value); 
+          setGenerateNewCF(true); 
+        }}>
+          <option value="prot">Protanopia</option>
+          <option value="deut">Deuteranopia</option>
+          <option value="trit">Tritanopia</option>
+        </select>
+
       <table>
         <tbody>
 
         {
           Array.from(
-            { length: tempColorAmount },
+            { length: tempColorAmount+1 },
             (_, i) => (
-              <React.Fragment key={i + "line"}>
+              <React.Fragment key={i + "dot"}>
                 <tr>
                   {
                 Array.from(
                   //Length NUMBER HAS TO BE RETRIEVED FORM GLOBAL COLORS PARENT
                   { length: numConfusionLines+1 },
                     (_, j) => i === 0 && j === 0 ? (
-                      <th></th>
+                      <th key={j + "dot"}></th>
                     ) : i === 0 ? (
-                      <th><label>Line {j}<br/><input type="radio" name="colorLine"></input></label></th>
+                      <th key={j + "dot"}><label>Line {j}<br/><input type="radio" name="colorLine"></input></label></th>
                     ) : j === 0 ? (
-                      <th>Color {i}</th>
+                      <th key={j + "dot"}>Color {i}</th>
                     ) : (
-                      <th></th>
+                      // <th key={j + "dot"} style={{backgroundColor: document.getElementById("0-dot") ? document.getElementById("0-dot").style.stroke : "grey" }}></th>
+                      //If-check to make sure the element is loaded in. Calculate color and set cell to be the color of the correspoding confusion dot
+                      <th key={j + "dot"} style={{backgroundColor: document.getElementById(`${j-1}-line-${i-1}-dot`) ? srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-y")*100)) : "grey" }}>{`${j}-line-${i}-dot`}</th>
                     )
                   ) 
                 }
@@ -223,23 +233,32 @@ function Color({ srgbValue }) {
         {
           Array.from(
             { length: numConfusionLines },
-            (_, i) => radioColors === "prot" ? (
-              <React.Fragment key={i + "line"}>
-                <line key={i+"p"} style={{stroke:'red', strokeWidth:'2'}} 
+            (_, i) => listColors === "prot" ? (
+              <React.Fragment key={i + "pline"}>
+                <line key={i+"p"} 
+                  style={{stroke:'red', strokeWidth:'2'}} 
+                  id={i+"-line"}
                   x1={`${10 + (100 * protan.x1) * 0.8}%`} 
                   y1={`${10 + (100 - (100 * protan.y1)) * 0.8}%`} 
                   x2={`${10 + (100 * protan.stat) * 0.8}%`} 
                   y2={`${10 + (100 - (100 * calcConfusionLine(i,protan.x2,protan.y2))) * 0.8}%`} //0.14 and 0.67 values found manually through testing
                   /> 
                   {
-                Array.from(
+                  Array.from(
                   //Length NUMBER HAS TO BE RETRIEVED FORM GLOBAL COLORS PARENT
                   { length: tempColorAmount },
-                    (_, j) => (
-                      <circle key={j+"dot-"+i+"t"} id={j+"dd"} style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
-                        cx={`${10 + (100 * calcConfusionDot(protan.x1, protan.y1, protan.x2, protan.y2, protan.stat, false, i,j).x) * 0.8}%`} 
-                        cy={`${10 + (100 - (100 * calcConfusionDot(protan.x1, protan.y1, protan.x2, protan.y2, protan.stat, false, i,j).y)) * 0.8}%`} />    
-                    )
+                    (_, j) => {
+                      const calcDot = calcConfusionDot(protan.x1, protan.y1, protan.x2, protan.y2, protan.stat, false, i,j);
+                      return(
+                        <circle key={j+"dot-"+i+"t"} 
+                        style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
+                        id={i+"-line-"+j+"-dot"}
+                        data-coord-x={calcDot.x}
+                        data-coord-y={calcDot.y}
+                        cx={`${10 + (100 * calcDot.x) * 0.8}%`} 
+                        cy={`${10 + (100 - (100 * calcDot.y)) * 0.8}%`} />    
+                      ) 
+                    }
                   )
                 }
               </React.Fragment>
@@ -251,9 +270,11 @@ function Color({ srgbValue }) {
         { 
           Array.from(
             { length: numConfusionLines },
-            (_, i) => radioColors === "deut" ? (
-              <React.Fragment key={i + "line"}>
-                <line key={i+"d"} style={{stroke:'green', strokeWidth:'2'}} 
+            (_, i) => listColors === "deut" ? (
+              <React.Fragment key={i + "dline"}>
+                <line key={i+"d"} 
+                  style={{stroke:'green', strokeWidth:'2'}} 
+                  id={i+"-line"}
                   x1={`${10 + (100 * deutan.x1) * 0.8}%`} 
                   y1={`${10 + (100 - (100 * deutan.y1)) * 0.8}%`} 
                   x2={`${10 + (100 * deutan.stat) * 0.8}%`} 
@@ -263,12 +284,19 @@ function Color({ srgbValue }) {
                   Array.from(
                     //Length NUMBER HAS TO BE RETRIEVED FORM GLOBAL COLORS PARENT
                     { length: tempColorAmount },
-                    (_, j) => (
-                      <circle key={j+"dot-"+i+"t"} id={j+"dd"} style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
-                        cx={`${10 + (100 * calcConfusionDot(deutan.x1, deutan.y1, deutan.x2, deutan.y2, deutan.stat, false, i,j).x) * 0.8}%`} 
-                        cy={`${10 + (100 - (100 * calcConfusionDot(deutan.x1, deutan.y1, deutan.x2, deutan.y2, deutan.stat, false, i,j).y)) * 0.8}%`} />    
+                      (_, j) => {
+                        const calcDot = calcConfusionDot(deutan.x1, deutan.y1, deutan.x2, deutan.y2, deutan.stat, false, i,j);
+                        return(
+                          <circle key={j+"dot-"+i+"t"} 
+                          style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
+                          id={i+"-line-"+j+"-dot"}
+                          data-coord-x={calcDot.x}
+                          data-coord-y={calcDot.y}
+                          cx={`${10 + (100 * calcDot.x) * 0.8}%`} 
+                          cy={`${10 + (100 - (100 * calcDot.y)) * 0.8}%`} />    
+                        ) 
+                      }
                     )
-                  )
                 }
               </React.Fragment>
             ) : null
@@ -279,22 +307,31 @@ function Color({ srgbValue }) {
         {
           Array.from(
             { length: numConfusionLines },
-            (_, i) => radioColors === "trit" ? (
-              <React.Fragment key={i + "line"}>
-                <line key={i+"t"} style={{stroke:'blue', strokeWidth:'2'}} 
+            (_, i) => listColors === "trit" ? (
+              <React.Fragment key={i + "tline"}>
+                <line key={i+"t"} 
+                  style={{stroke:'blue', strokeWidth:'2'}} 
+                  id={i+"-line"}
                   x1={`${10 + (100 * tritan.x1) * 0.8}%`} 
                   y1={`${10 + (100 - (100 * tritan.y1)) * 0.8}%`} 
                   x2={`${10 + (100 * calcConfusionLine(i,tritan.x2,tritan.y2)) * 0.8}%`}
                   y2={`${10 + (100 - (100 * tritan.stat)) * 0.8}%`} />
                 {
-                  Array.from(
-                    //Length NUMBER HAS TO BE RETRIEVED FORM GLOBAL COLORS PARENT
-                    { length: tempColorAmount },
-                    (_, j) => (
-                      <circle key={j+"dot-"+i+"t"} id={j+"dd"} style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
-                        cx={`${10 + (100 * calcConfusionDot(tritan.x1, tritan.y1, tritan.x2, tritan.y2, tritan.stat, true, i,j).x) * 0.8}%`} 
-                        cy={`${10 + (100 - (100 * calcConfusionDot(tritan.x1, tritan.y1, tritan.x2, tritan.y2, tritan.stat, true, i,j).y)) * 0.8}%`} />    
-                    )
+                Array.from(
+                  //Length NUMBER HAS TO BE RETRIEVED FORM GLOBAL COLORS PARENT
+                  { length: tempColorAmount },
+                    (_, j) => {
+                      const calcDot = calcConfusionDot(tritan.x1, tritan.y1, tritan.x2, tritan.y2, tritan.stat, true, i,j);
+                      return(
+                        <circle key={j+"dot-"+i+"t"} 
+                        style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
+                        id={i+"-line-"+j+"-dot"}
+                        data-coord-x={calcDot.x}
+                        data-coord-y={calcDot.y}
+                        cx={`${10 + (100 * calcDot.x) * 0.8}%`} 
+                        cy={`${10 + (100 - (100 * calcDot.y)) * 0.8}%`} />    
+                      ) 
+                    }
                   )
                 }
               </React.Fragment>
@@ -377,9 +414,9 @@ function Color({ srgbValue }) {
           x={`${10 + clickPosition.x * 0.8}%`}
           y={`${11.7 + clickPosition.y * 0.8}%`}
         >
-          {/* X: {(clickPosition.x / 100).toFixed(3)}, 
+          X: {(clickPosition.x / 100).toFixed(3)}, 
           Y: {(1-(clickPosition.y / 100)).toFixed(3)}, 
-          sRGB: {calcSRGBClick()[0]+", "+ calcSRGBClick()[1] + ", " + calcSRGBClick()[2]} */}
+          sRGB: {calcSRGBClick()[0]+", "+ calcSRGBClick()[1] + ", " + calcSRGBClick()[2]}
           x
         </text>
         )}
