@@ -553,7 +553,7 @@ function ColorTest() {
             
             //If correct, new character, if incorrect, easier test
             //Limit on > 3 due to figure turning worse after that value
-            if(motive.current.value === key || globalRadiusChange > 3){
+            if(motive.current.value === key || globalRadiusChange > 3 ){//|| globalBorder === true){
                 //Possible values for test
                 const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
                 const randomIndex = Math.floor(Math.random() * chars.length);
@@ -562,13 +562,16 @@ function ColorTest() {
                 getTextMap(chars[randomIndex]);
                 // eslint-disable-next-line
                 globalRadiusChange = 0;
+                // globalBorder = false;
 
                 //If correct add to list
                 svgList.current.push(svgCircles.current.innerHTML);
-                //TODO: if failed and it reaches globalRadisuChange 4, make special case, we still want to see it
+                //TODO: if failed and it reaches globalRadisuChange 4, make special case, we still want to see it in data
             } else{
                 //If incorrect, increase figure size
                 globalRadiusChange++;
+                // globalBorder = true;
+                
             }
 
           }
