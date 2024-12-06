@@ -313,17 +313,15 @@ function ColorTest() {
             // Can use existing instead
             const root = ReactDOM.createRoot(input);
             root.render(
-                // <Color srgbValue={(value) => recieveSrgbValue(value,i)} />
+                <Color globalNumColors={globalNumColors*2} srgbValue={(value) => recieveSrgbValue(value)} />
             );
         
-
+            
             input.id = "fil" + i;
             input.className = "fillColorsClass";
             // input.value = `${hexVal.current}`;
 
             input.addEventListener("input", function () {
-                // Keep commented out, it struggles to find this particular value
-                document.getElementById(this.id).value = this.value.replace('#', '');
                 drawSVG();
             });
             input.value = i < globalNumColors ? "#4F44F4" : "#BBBBBB";
@@ -437,11 +435,6 @@ function ColorTest() {
         a.href = "data:image/svg+xml;base64," + window.btoa(svgCircles.current.innerHTML);
         a.download = "filename.svg";
     }
-    
-
-    //Recieve srgb values from child <Color>
-    let srgb = useRef(null);
-    let hexList = useRef([]); //List for seperating colors from <Color> elements
 
     //List of svgs
     let svgList = useRef([]);
@@ -450,24 +443,17 @@ function ColorTest() {
 
 
 
-    const recieveSrgbValue = (newSrgb, id) => {
-        srgb = newSrgb; // Update state with new RGB value
+    const recieveSrgbValue = (newSrgb) => {
 
-        //Convert from sRGB hex
-        const srgbToHex = (value) => {
-            const hex = value.toString(16);
-            return hex.length === 1 ? '0' + hex : hex;
-        };
-    
-        const hexTemp = `#${srgbToHex(srgb[0])}${srgbToHex(srgb[1])}${srgbToHex(srgb[2])}`;
-
-        hexList.current[id] = hexTemp; 
+        //prevent errors on empty array
+        // if(newSrgb.length === 0){
+        //     return;
+        // }
 
         //Set style color for circles
         for (let i = 0; i < globalNumColors * 2; i++) {
-            document.getElementById("fil"+i).value = hexList.current[i];
+            document.getElementById("fil"+i).value =  newSrgb[i]  // hexList.current[i];
         }
-
 
 
     //   Add each SVG string into the div
@@ -595,7 +581,7 @@ function ColorTest() {
         <button onClick={() => console.log(svgList.current.at(-1))}>Last one</button>
         <button onClick={() => console.log(svgList.current)}>All</button>
 
-        <Color srgbValue={(value) => recieveSrgbValue(value,1)}/>
+
 
         <div ref={svgDiv}></div>
 

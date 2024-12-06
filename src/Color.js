@@ -45,10 +45,10 @@ function xyy2srgb(x, y, Y) {
 let cfList = [];
 
 
-function Color({ srgbValue }) {
+function Color({ srgbValue, globalNumColors }) {
 
   //Click coordinates
-  const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
+  // const [clickPosition] = useState({ x: 0, y: 0 });
   const [sliderBright, setSliderBright] = useState(100);
 
   //Update brightness slider
@@ -57,9 +57,9 @@ function Color({ srgbValue }) {
   }
 
   //SRGB functino based on cursor click, old implementation for early testing
-  function calcSRGBClick(){
-    return xyy2srgb((clickPosition.x / 100).toFixed(3), (1-(clickPosition.y / 100)).toFixed(3), sliderBright);
-  }
+  // function calcSRGBClick(){
+  //   return xyy2srgb((clickPosition.x / 100).toFixed(3), (1-(clickPosition.y / 100)).toFixed(3), sliderBright);
+  // }
 
   //Calculate sRGB values from x,y coordinates and slider brightness
   function calcSRGB(x,y){
@@ -74,27 +74,28 @@ function Color({ srgbValue }) {
   }
 
   //Ref initialization
-  const colorBox = useRef(null);
+  // const colorBox = useRef(null);
 
-  //Click event
-  const clickSVG = (event) => {
-    const svg = event.currentTarget;
-    const rect = svg.getBoundingClientRect();
+  // //Click event
+  // const clickSVG = (event) => {
+  //   const svg = event.currentTarget;
+  //   const rect = svg.getBoundingClientRect();
 
-    //Calculate the actual position within the SVG
-    const x = ((event.clientX - rect.left) / rect.width);
-    const y = ((event.clientY - rect.top) / rect.height);
+  //   //Calculate the actual position within the SVG
+  //   const x = ((event.clientX - rect.left) / rect.width);
+  //   const y = ((event.clientY - rect.top) / rect.height);
 
-    //Limit click coordinates to be within the grid (10% to 90%)
-    const gridX = Math.max(0, Math.min((x - 0.1) / 0.8, 1)) * 100;
-    const gridY = Math.max(0, Math.min((y - 0.1) / 0.8, 1)) * 100;
+  //   //Limit click coordinates to be within the grid (10% to 90%)
+  //   const gridX = Math.max(0, Math.min((x - 0.1) / 0.8, 1)) * 100;
+  //   const gridY = Math.max(0, Math.min((y - 0.1) / 0.8, 1)) * 100;
     
-    setClickPosition({ x: gridX, y: gridY });
+  //   setClickPosition({ x: gridX, y: gridY });
     
-    //Pass sRGB values to parent manually, due to delayed useState update
-    srgbValue(xyy2srgb((gridX / 100).toFixed(3), (1-(gridY / 100)).toFixed(3), sliderBright)); 
+  //   //Pass sRGB values to parent manually, due to delayed useState update
+  //   // srgbValue(xyy2srgb((gridX / 100).toFixed(3), (1-(gridY / 100)).toFixed(3), sliderBright)); 
+  //   srgbValue(listConfusionColors.current);
 
-  };
+  // };
 
 
   //Global confusion line values 
@@ -172,13 +173,11 @@ function Color({ srgbValue }) {
     return {x: dot.x, y: dot.y};
   }
 
-  //TODO: REMOVE and CHANGE to parent value
-  const tempColorAmount = 4;
- 
-  //Force re-render to ensure table is updated (if no re-render happens, it stays 1 DOM state "behind")
-  //STILL PROBLEM
+  //List of colors for a selected confusion line
+  let listConfusionColors = useRef([]);
+
+//Prevent DOM from lagging one state behind by forcing an update with a dummy decoy
   useEffect(() => {
-    // setGenerateNewCF(true);
     setDecoyState(true);
   }, [listColors]);
 
@@ -186,14 +185,21 @@ function Color({ srgbValue }) {
     <div>
       <div>
         <h3>Type of color confusion lines:</h3>
+        {/* Does not maintain updated state after button click */}
         {/* <button value={listColors} onClick={() => {setGenerateNewCF(true); setDecoyState(true);}}>Generate new lines</button> <br/> */}
         {/* <button onClick={() => setListColors}>Generate new lines</button> <br/> */}
+        {/* <button onClick={() => console.log(listConfusionColors.current)}>Gen cols</button> <br/> */}
 
         {/* Dropdown list with color types */}
-        <select value={listColors} onChange={(e) => {
+        <select id="colorSelect" value={listColors} onChange={(e) => {
           setListColors(e.target.value); 
           setGenerateNewCF(true); 
-          setDecoyState(true)
+          setDecoyState(true);
+          //Reset radio buttons in table and reset list
+          listConfusionColors.current = [];
+          for(let i = 0; i < numConfusionLines; i++){
+            document.getElementById("mm"+(i+1)).checked = "";
+          }
         }}>
           <option value="prot">Protanopia</option>
           <option value="deut">Deuteranopia</option>
@@ -205,7 +211,7 @@ function Color({ srgbValue }) {
 
         {
           Array.from(
-            { length: tempColorAmount+1 },
+            { length: globalNumColors+1 },
             (_, i) => (
               <React.Fragment key={i + "dot"}>
                 <tr>
@@ -216,13 +222,31 @@ function Color({ srgbValue }) {
                     (_, j) => i === 0 && j === 0 ? (
                       <th key={j + "dot"}></th>
                     ) : i === 0 ? (
-                      <th key={j + "dot"}><label>Line {j}<br/><input type="radio" name="colorLine"></input></label></th>
+                      <th key={j + "dot"} id={"radioLine-"+j} onChange={() => {
+                        //Reset other confusion lines
+                          listConfusionColors.current = [];
+                          for (let n = 0; n < numConfusionLines; n++){
+                            document.getElementById(`${n}-line`).style.strokeWidth = 2;
+                          }
+                          //Get color of each point in this confusion line
+                          for (let m = 0; m < globalNumColors; m++){
+                            listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
+                          }
+                          document.getElementById(`${j-1}-line`).style.strokeWidth = 4;
+      
+                          srgbValue(listConfusionColors.current);
+                        }
+                      }><label>Line {j}<br/><input type="radio" name="colorLine" id={"mm"+j}></input></label></th>
+                    ) : j === 0 && i % 2 === 1? (
+                      <th key={j + "dot"}>Motive</th>
                     ) : j === 0 ? (
-                      <th key={j + "dot"}>Color {i}</th>
+                      <th key={j + "dot"}>Foreground</th>
                     ) : (
-                      // <th key={j + "dot"} style={{backgroundColor: document.getElementById("0-dot") ? document.getElementById("0-dot").style.stroke : "grey" }}></th>
                       //If-check to make sure the element is loaded in. Calculate color and set cell to be the color of the correspoding confusion dot
-                      <th key={j + "dot"} style={{backgroundColor: document.getElementById(`${j-1}-line-${i-1}-dot`) ? srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-y")*100)) : "grey" }}></th>
+                      <th key={j + "dot"} style={{backgroundColor: 
+                        document.getElementById(`${j-1}-line-${i-1}-dot`) 
+                        ? srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-y")*100)) 
+                        : "grey" }}></th>
                     )
                   ) 
                 }
@@ -235,7 +259,7 @@ function Color({ srgbValue }) {
       </table>
       </div> 
     <div style={{height: "400px", width: "400px"}}>
-      <svg style={{height:"75%", width: "75%"}} onClick={clickSVG}>
+      <svg style={{height:"75%", width: "75%"}}>
 
 
         {/* Dynamic creation of confusion lines */}
@@ -255,8 +279,7 @@ function Color({ srgbValue }) {
                   /> 
                   {
                   Array.from(
-                  //Length NUMBER HAS TO BE RETRIEVED FORM GLOBAL COLORS PARENT
-                  { length: tempColorAmount },
+                  { length: globalNumColors },
                     (_, j) => {
                       const calcDot = calcConfusionDot(protan.x1, protan.y1, protan.x2, protan.y2, protan.stat, false, i,j);
                       return(
@@ -292,8 +315,7 @@ function Color({ srgbValue }) {
                   /> 
                   {
                   Array.from(
-                    //Length NUMBER HAS TO BE RETRIEVED FORM GLOBAL COLORS PARENT
-                    { length: tempColorAmount },
+                    { length: globalNumColors },
                       (_, j) => {
                         const calcDot = calcConfusionDot(deutan.x1, deutan.y1, deutan.x2, deutan.y2, deutan.stat, false, i,j);
                         return(
@@ -328,8 +350,7 @@ function Color({ srgbValue }) {
                   y2={`${10 + (100 - (100 * tritan.stat)) * 0.8}%`} />
                 {
                 Array.from(
-                  //Length NUMBER HAS TO BE RETRIEVED FORM GLOBAL COLORS PARENT
-                  { length: tempColorAmount },
+                  { length: globalNumColors },
                     (_, j) => {
                       const calcDot = calcConfusionDot(tritan.x1, tritan.y1, tritan.x2, tritan.y2, tritan.stat, true, i,j);
                       return(
@@ -348,39 +369,6 @@ function Color({ srgbValue }) {
             ) : null
           )
         }
-
-
-
-        {/* Confusion lines */}
-        {/* <line style={{stroke:'red', strokeWidth:'2'}} x1={`${10 + (100 * protan.x1) * 0.8}%`} y1={`${10 + (100 - (100 * protan.y1)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * 0.55)) * 0.8}%`} /> */}
-
-        {/* Points interpolated on confusion line */}
-        {/* <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.5).x) * 0.8}%`} cy={`${10 + (100 - (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.5).y)) * 0.8}%`} />
-        <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.6).x) * 0.8}%`} cy={`${10 + (100 - (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.6).y)) * 0.8}%`} />
-        <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.7).x) * 0.8}%`} cy={`${10 + (100 - (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.7).y)) * 0.8}%`} /> */}
-
-
-        {/* Values for edges for each coordinate. Randome values between these are the way to go for t value */}
-        {/* Prot: 0.1x,  0.67y   -   0.1x,  0.14y */}
-        {/* Deut: 0.1x,  0.3y    -   0.1x,  0.74y */}
-        {/* Trit: 0.35x, 0.7y    -   0.95x, 0.7y */}
-
-
-        {/* <circle style={{stroke:'black', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.7).x) * 0.8}%`} cy={`${10 + (100 - (100 * interpolate(protan.x1,protan.y1,0.1,0.55,0.7).y)) * 0.8}%`} /> */}
-
-        
-
-
-        {/* <line style={{stroke:'green', strokeWidth:'2'}} x1={`${10 + (100 * deutan.x1) * 0.8}%`} y1={`${10 + (100 - (100 * deutan.y1)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * 0.6)) * 0.8}%`} />
-        <line style={{stroke:'green', strokeWidth:'2'}} x1={`${10 + (100 * deutan.x1) * 0.8}%`} y1={`${10 + (100 - (100 * deutan.y1)) * 0.8}%`} x2={`${10 + (100 * 0.1) * 0.8}%`} y2={`${10 + (100 - (100 * 0.3)) * 0.8}%`} />
-        <line style={{stroke:'blue', strokeWidth:'2'}} x1={`${10 + (100 * tritan.x1) * 0.8}%`} y1={`${10 + (100 - (100 * tritan.y1)) * 0.8}%`} x2={`${10 + (100 * 0.35) * 0.8}%`} y2={`${10 + (100 - (100 * 0.7)) * 0.8}%`} />
-        <line style={{stroke:'blue', strokeWidth:'2'}} x1={`${10 + (100 * tritan.x1) * 0.8}%`} y1={`${10 + (100 - (100 * tritan.y1)) * 0.8}%`} x2={`${10 + (100 * 0.5) * 0.8}%`} y2={`${10 + (100 - (100 * 0.8)) * 0.8}%`} />
-        <line style={{stroke:'blue', strokeWidth:'2'}} x1={`${10 + (100 * tritan.x1) * 0.8}%`} y1={`${10 + (100 - (100 * tritan.y1)) * 0.8}%`} x2={`${10 + (100 * 0.6) * 0.8}%`} y2={`${10 + (100 - (100 * 0.7)) * 0.8}%`} /> */}
-
-        {/* Use interpolation to find line between */}
-
-
-
 
 
         {/* x-axis */}
@@ -419,7 +407,7 @@ function Color({ srgbValue }) {
 
 
         {/* Click for coordinates in grid */}
-        {clickPosition && (
+        {/* {clickPosition && (
           <text style={{fontSize: "20", textAnchor: "middle", cursor: "default"}}
           x={`${10 + clickPosition.x * 0.8}%`}
           y={`${11.7 + clickPosition.y * 0.8}%`}
@@ -429,7 +417,7 @@ function Color({ srgbValue }) {
           sRGB: {calcSRGBClick()[0]+", "+ calcSRGBClick()[1] + ", " + calcSRGBClick()[2]}
           x
         </text>
-        )}
+        )} */}
 
 
         {/* White point D65 Wikipedia, find good paper instead */}
@@ -443,9 +431,12 @@ function Color({ srgbValue }) {
 
       </svg>
 
-      <div ref={colorBox} style={{width: "25%", height: "80%", float:"left", backgroundColor: "rgb("+ calcSRGBClick()[0] +","+ calcSRGBClick()[1] +","+ calcSRGBClick()[2] +")"}}></div>
+      {/* <div ref={colorBox} style={{width: "25%", height: "80%", float:"left", backgroundColor: "rgb("+ calcSRGBClick()[0] +","+ calcSRGBClick()[1] +","+ calcSRGBClick()[2] +")"}}></div> */}
       <label>Brightness: 
-        <input type="range" min="0" max="100" value={sliderBright} onChange={changeBrightness}></input>
+        <input type="range" min="0" max="100" value={sliderBright} onChange={(e) => {
+          changeBrightness(e); 
+          srgbValue(listConfusionColors.current);
+          }}></input>
         {sliderBright}
       </label>
 
