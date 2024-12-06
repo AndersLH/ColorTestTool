@@ -80,6 +80,7 @@ function ColorTest() {
     
     let [globalNumColors] = useState(1); // How many colors on motive and background(each)
     let [globalNumSpecialColors] = useState(1); // How many special colors
+    let [numConfusionLines] = useState(4); // How many special colors
     
     let [globalCurrentType] = useState("Circle"); // Current type of figure to be drawn
 
@@ -304,16 +305,13 @@ function ColorTest() {
                 colorchoices.appendChild(document.createElement("br"));
                 colorchoices.appendChild(document.createElement("br"));
             }
-            // let input = document.createElement("input");
-            // input.type = "color";
 
-            
             //Create custom element <Color/>
             const input = document.createElement("div"); 
             // Can use existing instead
             const root = ReactDOM.createRoot(input);
             root.render(
-                <Color globalNumColors={globalNumColors*2} srgbValue={(value) => recieveSrgbValue(value)} />
+                <Color globalNumColors={globalNumColors*2} numConfusionLines={numConfusionLines} srgbValue={(value) => recieveSrgbValue(value)} />
             );
         
             
@@ -729,6 +727,31 @@ function ColorTest() {
                                 value = value.slice(0, e.target.maxLength);
 
                                 globalNumColors = Number(value); 
+                                showColorChoice();
+                                setColor();
+                                drawSVG();
+
+                                e.target.value = value;
+                            }}/>
+
+                        <label> How many confusion lines? </label>
+                        <input type="number" defaultValue="4" min="1" max="9" ref={numOfColors} maxLength="1"
+                            onInput={(e) => {
+                                let value = e.target.value;
+
+                                if (Number(value) < 1) {
+                                value = 1;
+                                } else if (Number(value) > 9) {
+                                value = 9;
+                                }
+
+                                if (Number(value) === 0 && value.length) {
+                                value = 1; 
+                                }
+
+                                value = value.slice(0, e.target.maxLength);
+
+                                numConfusionLines = Number(value);
                                 showColorChoice();
                                 setColor();
                                 drawSVG();

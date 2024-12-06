@@ -45,7 +45,7 @@ function xyy2srgb(x, y, Y) {
 let cfList = [];
 
 
-function Color({ srgbValue, globalNumColors }) {
+function Color({ srgbValue, globalNumColors, numConfusionLines }) {
 
   //Click coordinates
   // const [clickPosition] = useState({ x: 0, y: 0 });
@@ -122,8 +122,6 @@ function Color({ srgbValue, globalNumColors }) {
 
   let [listColors,setListColors] = useState("prot");
 
-  //Number of generated confusion lines
-  let numConfusionLines = 5;
   //Temporary store lines and wait for refresh button generate new ones
   let [generateNewCF, setGenerateNewCF] = useState(true);
   //Decoy state, it exists to help update the DOM as the table colors lags behind on state without it
@@ -163,9 +161,9 @@ function Color({ srgbValue, globalNumColors }) {
     //TODO random interpolation inside triangle, CURRENTLY STATIC
     let dot;
     if(xCoor){ //Checks if x2 and y2 coordinates need to be swapped depending on the confusion line, tritan differs from deutan and protan
-      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,(0.3+j/10));
+      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,(0.55+j/15));
     } else {
-      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),(0.3+j/10));
+      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),(0.55+j/15));
     }
 
     // let color = calcSRGB(100*dot.x,100-100*dot.y);
@@ -269,6 +267,7 @@ function Color({ srgbValue, globalNumColors }) {
             { length: numConfusionLines },
             (_, i) => listColors === "prot" ? (
               <React.Fragment key={i + "pline"}>
+                {/* Confusion lines */}
                 <line key={i+"p"} 
                   style={{stroke:'red', strokeWidth:'2'}} 
                   id={i+"-line"}
@@ -283,6 +282,7 @@ function Color({ srgbValue, globalNumColors }) {
                     (_, j) => {
                       const calcDot = calcConfusionDot(protan.x1, protan.y1, protan.x2, protan.y2, protan.stat, false, i,j);
                       return(
+                        // Confusion dots
                         <circle key={j+"dot-"+i+"t"} 
                         style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
                         id={i+"-line-"+j+"-dot"}
@@ -305,6 +305,7 @@ function Color({ srgbValue, globalNumColors }) {
             { length: numConfusionLines },
             (_, i) => listColors === "deut" ? (
               <React.Fragment key={i + "dline"}>
+                {/* Confusion lines */}
                 <line key={i+"d"} 
                   style={{stroke:'green', strokeWidth:'2'}} 
                   id={i+"-line"}
@@ -319,6 +320,7 @@ function Color({ srgbValue, globalNumColors }) {
                       (_, j) => {
                         const calcDot = calcConfusionDot(deutan.x1, deutan.y1, deutan.x2, deutan.y2, deutan.stat, false, i,j);
                         return(
+                          // Confusion dots
                           <circle key={j+"dot-"+i+"t"} 
                           style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
                           id={i+"-line-"+j+"-dot"}
@@ -341,6 +343,7 @@ function Color({ srgbValue, globalNumColors }) {
             { length: numConfusionLines },
             (_, i) => listColors === "trit" ? (
               <React.Fragment key={i + "tline"}>
+                {/* Confusion lines */}
                 <line key={i+"t"} 
                   style={{stroke:'blue', strokeWidth:'2'}} 
                   id={i+"-line"}
@@ -354,6 +357,7 @@ function Color({ srgbValue, globalNumColors }) {
                     (_, j) => {
                       const calcDot = calcConfusionDot(tritan.x1, tritan.y1, tritan.x2, tritan.y2, tritan.stat, true, i,j);
                       return(
+                        // Confusion dots
                         <circle key={j+"dot-"+i+"t"} 
                         style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
                         id={i+"-line-"+j+"-dot"}
