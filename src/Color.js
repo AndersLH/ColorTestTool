@@ -137,7 +137,7 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
                                    sRGBTriangle.b.x, sRGBTriangle.b.y, 
                                    sRGBTriangle.c.x, sRGBTriangle.c.y);
   
-    // Areas of sub-triangles formed with the point (x, y)
+    //Triangles with x and y, which should all add up to 'triangleArea' if x and y are within the original
     const area1 = triangleArea(x, y, sRGBTriangle.b.x, sRGBTriangle.b.y, sRGBTriangle.c.x, sRGBTriangle.c.y);
     const area2 = triangleArea(sRGBTriangle.a.x, sRGBTriangle.a.y, x, y, sRGBTriangle.c.x, sRGBTriangle.c.y);
     const area3 = triangleArea(sRGBTriangle.a.x, sRGBTriangle.a.y, sRGBTriangle.b.x, sRGBTriangle.b.y, x, y);
