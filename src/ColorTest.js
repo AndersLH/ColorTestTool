@@ -694,7 +694,7 @@ function ColorTest() {
                     <div ref={fps}></div>
                 </div>
                 <div ref={colors}>
-                    <fieldset style={{width: "40%"}}>
+                    <fieldset style={{width: "60%"}}>
                         <legend>Colors</legend>
                         <label> How many colors in each group? </label>
                         <input type="number" defaultValue="1" min="1" max="9"  maxLength="1"
@@ -720,7 +720,6 @@ function ColorTest() {
 
                                 e.target.value = value;
                             }}/>
-                            <br></br>
 
                         <label> How many confusion lines? </label>
                         <input type="number" defaultValue="4" min="1" max="9" maxLength="1"

@@ -51,6 +51,7 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
 
   //Click coordinates
   // const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
+  //Slider for brightness setting
   const [sliderBright, setSliderBright] = useState(100);
 
   //Coordinates for white point D65
@@ -87,7 +88,7 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
   //Calculate sRGB values from x,y coordinates and slider brightness
   function calcSRGB(x,y){
     y = 100-y; //Inverted y-axis in web
-    return xyy2srgb((x / 100).toFixed(3), (1-(y / 100)).toFixed(3), sliderBright);
+    return xyy2srgb((x / 100), (1-(y / 100)), sliderBright);
   }
 
   //Convert an array of RGB to a hex value
@@ -98,7 +99,7 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
 
   // //SRGB functino based on cursor click, old implementation for early testing
   // function calcSRGBClick(){
-  //   return xyy2srgb((clickPosition.x / 100).toFixed(3), (1-(clickPosition.y / 100)).toFixed(3), sliderBright);
+  //   return xyy2srgb((clickPosition.x / 100), (1-(clickPosition.y / 100)), sliderBright);
   // }
 
   //Ref initialization
@@ -168,6 +169,7 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
       return cfList[i];
   }
 
+
   //Interpolate and find a point t on line from x1,y1 to x2,y2 
   function interpolate(x1, y1, x2, y2, t) {
     //Add interpolation to sRGB triangle to ensure it is within boundaries
@@ -181,9 +183,15 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
       t = 0;
     }
 
+
+    // const isWithinRadius = (x1, y1, x2, y2, radius) => {
+    //   const distance = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+    //   return distance <= radius;
+    // };
+
     //If out of boundary, use recursion until it is
     if(!isPointInTriangle(x,y)){
-      reCalc = interpolate(x1, y1, x2, y2, t+0.2);
+      reCalc = interpolate(x1, y1, x2, y2, t+0.1);
     }
     
     return reCalc;
@@ -197,12 +205,10 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
     //TODO random interpolation inside triangle, CURRENTLY STATIC
     let dot;
     if(xCoor){ //Checks if x2 and y2 coordinates need to be swapped depending on the confusion line, tritan differs from deutan and protan
-      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,(j/10));
+      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,0);
     } else {
-      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),(j/10));
+      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),0);
     }
-
-    // let color = calcSRGB(100*dot.x,100-100*dot.y);
 
     return {x: dot.x, y: dot.y};
   }
@@ -212,6 +218,7 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
   //Coordinates for current confusion line for brightness slider to use for updating
   let listConfusionCoords = useRef(null);
 
+
 //Prevent DOM from lagging one state behind by forcing an update with a dummy decoy
   useEffect(() => {
     setDecoyState(true);
@@ -219,12 +226,9 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
 
   return (
     <div>
-      <div>
+      <div style={{float:"right"}}>
         <h3>Type of color confusion lines:</h3>
-        {/* Does not maintain updated state after button click */}
-        {/* <button value={listColors} onClick={() => {setGenerateNewCF(true); setDecoyState(true);}}>Generate new lines</button> <br/> */}
-        {/* <button onClick={() => setListColors}>Generate new lines</button> <br/> */}
-        {/* <button onClick={() => console.log(listConfusionColors.current)}>Gen cols</button> <br/> */}
+
 
         {/* Dropdown list with color types */}
         <select id="colorSelect" value={listColors} onChange={(e) => {
@@ -259,7 +263,7 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
                       <th key={j + "dot"}></th>
                     ) : i === 0 ? (
                       <th key={j + "dot"} id={"radioLine-"+j} onChange={() => {
-                        //Reset other confusion lines
+                        //Reset values for new confusion line
                           listConfusionColors.current = [];
                           listConfusionCoords.current = 0;
                           for (let n = 0; n < numConfusionLines; n++){
@@ -269,6 +273,8 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
                           for (let m = 0; m < globalNumColors; m++){
                             listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
                             listConfusionCoords.current = j;
+
+
                           }
                           document.getElementById(`${j-1}-line`).style.strokeWidth = 4;
       
@@ -295,7 +301,6 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
         }
         </tbody>
       </table>
-      </div> 
       <label>Brightness: 
         <input type="range" min="0" max="100" value={sliderBright} onMouseUp={() => {
           if(listConfusionCoords.current === null){
@@ -311,8 +316,9 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
           }}></input>
         {sliderBright}
       </label>
-    <div style={{height: "400px", width: "400px"}}>
-      <svg style={{height:"75%", width: "75%"}}>
+      </div> 
+    <div style={{height: "600px", width: "600px"}} >
+      <svg style={{height:"75%", width: "75%"}} >
 
         {/* Chromaticity diagram */}
         <image href={chromaticityImage} x={"5%"} y={"7.5%"} style={{filter: `brightness(${sliderBright}%)`}} width="86.7%" />
@@ -473,10 +479,9 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
           x={`${10 + clickPosition.x * 0.8}%`}
           y={`${11.7 + clickPosition.y * 0.8}%`}
         >
-          X: {(clickPosition.x / 100).toFixed(3)}, 
-          Y: {(1-(clickPosition.y / 100)).toFixed(3)}, 
+          x: {(clickPosition.x / 100).toFixed(3)}, 
+          y: {(1-(clickPosition.y / 100)).toFixed(3)}, 
           sRGB: {calcSRGBClick()[0]+", "+ calcSRGBClick()[1] + ", " + calcSRGBClick()[2]}
-          x
         </text>
         )} */}
 
