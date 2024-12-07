@@ -10,7 +10,6 @@ function ColorTest() {
     let app = useRef();
     let colorChoice = useRef();
     let colors = useRef();
-    let numOfColors = useRef();
     let svgCircles = useRef();
     let svgFillColors = useRef();
     let SVG_output_figures = useRef();
@@ -298,13 +297,6 @@ function ColorTest() {
 
         
         for (let i = 0; i < globalNumColors * 2; i++) {
-            if (i === 0) {
-                let labelM = document.createElement("label");
-                labelM.innerHTML = "Motive Color:";
-                colorchoices.appendChild(labelM);
-                colorchoices.appendChild(document.createElement("br"));
-                colorchoices.appendChild(document.createElement("br"));
-            }
 
             //Create custom element <Color/>
             const input = document.createElement("div"); 
@@ -442,11 +434,6 @@ function ColorTest() {
 
 
     const recieveSrgbValue = (newSrgb) => {
-
-        //prevent errors on empty array
-        // if(newSrgb.length === 0){
-        //     return;
-        // }
 
         //Set style color for circles
         for (let i = 0; i < globalNumColors * 2; i++) {
@@ -710,7 +697,7 @@ function ColorTest() {
                     <fieldset style={{width: "40%"}}>
                         <legend>Colors</legend>
                         <label> How many colors in each group? </label>
-                        <input type="number" defaultValue="1" min="1" max="9" ref={numOfColors} maxLength="1"
+                        <input type="number" defaultValue="1" min="1" max="9"  maxLength="1"
                             onInput={(e) => {
                                 let value = e.target.value;
 
@@ -733,9 +720,10 @@ function ColorTest() {
 
                                 e.target.value = value;
                             }}/>
+                            <br></br>
 
                         <label> How many confusion lines? </label>
-                        <input type="number" defaultValue="4" min="1" max="9" ref={numOfColors} maxLength="1"
+                        <input type="number" defaultValue="4" min="1" max="9" maxLength="1"
                             onInput={(e) => {
                                 let value = e.target.value;
 
@@ -758,6 +746,8 @@ function ColorTest() {
 
                                 e.target.value = value;
                             }}/>
+                            <br></br>
+
                         <hr />
                         <div ref={colorChoice}></div>
                     </fieldset>

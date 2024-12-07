@@ -1,5 +1,6 @@
 import './Color.css';
 import React, { useState, useRef, useEffect } from 'react';
+import chromaticityImage from "./chrom_imp.png";
 
 //xxY to sRGB code from matlab, converted to Javascript with ChatGPT. Some minor adjustments has been made to fit my code. 
 //Calculate XYZ from xyY 
@@ -9,7 +10,7 @@ function xyy2xyz(x, y, Y) {
   return [X, Y, Z];
 }
 
-//Calculate sRGB values from XYZ
+//Calculate sRGB values from XYZ, AI translated from Matlab
 function xyz2srgb(XYZ) {
   const M = [
     [3.2410, -1.5374, -0.4986],
@@ -18,6 +19,7 @@ function xyz2srgb(XYZ) {
   ];
 
   //Apply transformation
+  //AI translated from Matlab
   const sRGB = M.map(row =>
     row.reduce((sum, value, i) => sum + value * (XYZ[i] / 100), 0)
   );
@@ -45,21 +47,42 @@ function xyy2srgb(x, y, Y) {
 let cfList = [];
 
 
-function Color({ srgbValue, globalNumColors, numConfusionLines }) {
+function Color({ srgbValue, globalNumColors, numConfusionLines}) {
 
   //Click coordinates
-  // const [clickPosition] = useState({ x: 0, y: 0 });
+  // const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
   const [sliderBright, setSliderBright] = useState(100);
+
+  //Coordinates for white point D65
+  // let whitePoint = {x: 0.31272, y: 0.32903};
+
+  //Coordinates for creating sRGB triangle
+  let sRGBTriangle = {a: {x: 0.64, y: 0.33}, b: {x: 0.30, y: 0.60}, c: {x: 0.15, y: 0.06}}
+
+
+  //Confusion line values 
+  //x1 and y1 from color science papers as the copunctual point where the confusion lines start, 
+  //x2 and y2 are points to actually create a line from the confusion line point, manually found and tested to stay within borders
+  //stat are the x or y coordinates the lines will stop at, they remain static
+  const protan = {x1: 0.7455, y1: 0.2565, x2: 0.14, y2: 0.67, stat:0.1}; 
+  const deutan = {x1: 1.4, y1: -0.4, x2: 0.3, y2: 0.74, stat:0.1}; 
+  const tritan = {x1: 0.17045, y1: 0, x2: 0.35, y2: 0.95, stat:0.7};
+
+
+  //Controls which confusion lines to show
+  let [listColors,setListColors] = useState("prot");
+
+  //Temporary store lines and wait for refresh button generate new ones
+  let [generateNewCF, setGenerateNewCF] = useState(true);
+  //Decoy state, it exists to help update the DOM as the table colors lags behind on state without it
+  let [decoyState, setDecoyState] = useState(true);
+
+
 
   //Update brightness slider
   const changeBrightness = (event) => {
     setSliderBright(event.target.value);
   }
-
-  //SRGB functino based on cursor click, old implementation for early testing
-  // function calcSRGBClick(){
-  //   return xyy2srgb((clickPosition.x / 100).toFixed(3), (1-(clickPosition.y / 100)).toFixed(3), sliderBright);
-  // }
 
   //Calculate sRGB values from x,y coordinates and slider brightness
   function calcSRGB(x,y){
@@ -73,10 +96,15 @@ function Color({ srgbValue, globalNumColors, numConfusionLines }) {
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   }
 
+  // //SRGB functino based on cursor click, old implementation for early testing
+  // function calcSRGBClick(){
+  //   return xyy2srgb((clickPosition.x / 100).toFixed(3), (1-(clickPosition.y / 100)).toFixed(3), sliderBright);
+  // }
+
   //Ref initialization
   // const colorBox = useRef(null);
 
-  // //Click event
+  //Click event
   // const clickSVG = (event) => {
   //   const svg = event.currentTarget;
   //   const rect = svg.getBoundingClientRect();
@@ -98,35 +126,25 @@ function Color({ srgbValue, globalNumColors, numConfusionLines }) {
   // };
 
 
-  //Global confusion line values 
-  //x1 and y1 from color science papers as the point where the confusion lines start
-  //x2 and y2 are points to actually create a line from the confusion line point, manually found and tested
-  //stat are the x or y coordinates the lines will stop at, they remain static
-  const protan = {x1: 0.7455, y1: 0.2565, x2: 0.14, y2: 0.67, stat:0.1}; 
-  const deutan = {x1: 1.4, y1: -0.4, x2: 0.3, y2: 0.74, stat:0.1}; 
-  const tritan = {x1: 0.17045, y1: 0, x2: 0.35, y2: 0.95, stat:0.7};
-
-
-
-
-  //Interpolate and find a point t on line from x1,y1 to x2,y2 
-  function interpolate(x1, y1, x2, y2, t) {
-
-    //Add interpolation to sRGB triangle to ensure it is within boundaries
-    //TBD
-
-    const x = x1 + t * (x2 - x1);
-    const y = y1 + t * (y2 - y1);
-    return {x: x,y: y };
+  function isPointInTriangle(x, y) {
+    // Helper function to calculate area of a triangle
+    function triangleArea(x1, y1, x2, y2, x3, y3) {
+      return Math.abs((x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2);
+    }
+  
+    // Total area of the triangle
+    const totalArea = triangleArea(sRGBTriangle.a.x, sRGBTriangle.a.y, 
+                                   sRGBTriangle.b.x, sRGBTriangle.b.y, 
+                                   sRGBTriangle.c.x, sRGBTriangle.c.y);
+  
+    // Areas of sub-triangles formed with the point (x, y)
+    const area1 = triangleArea(x, y, sRGBTriangle.b.x, sRGBTriangle.b.y, sRGBTriangle.c.x, sRGBTriangle.c.y);
+    const area2 = triangleArea(sRGBTriangle.a.x, sRGBTriangle.a.y, x, y, sRGBTriangle.c.x, sRGBTriangle.c.y);
+    const area3 = triangleArea(sRGBTriangle.a.x, sRGBTriangle.a.y, sRGBTriangle.b.x, sRGBTriangle.b.y, x, y);
+  
+    // Check if the sum of the sub-triangle areas equals the total area
+    return Math.abs(totalArea - (area1 + area2 + area3)) < 1e-9; // Allow for floating-point precision errors
   }
-
-  let [listColors,setListColors] = useState("prot");
-
-  //Temporary store lines and wait for refresh button generate new ones
-  let [generateNewCF, setGenerateNewCF] = useState(true);
-  //Decoy state, it exists to help update the DOM as the table colors lags behind on state without it
-  let [decoyState, setDecoyState] = useState(true);
-
 
   //Calculate an even random split of confusion lines generated
   function calcConfusionLine(i, min, max){
@@ -146,12 +164,30 @@ function Color({ srgbValue, globalNumColors, numConfusionLines }) {
         setGenerateNewCF(false);
         setDecoyState(false);
       }
-
     }    
-
-    return cfList[i];
+      return cfList[i];
   }
 
+  //Interpolate and find a point t on line from x1,y1 to x2,y2 
+  function interpolate(x1, y1, x2, y2, t) {
+    //Add interpolation to sRGB triangle to ensure it is within boundaries
+    const x = x1 + t * (x2 - x1);
+    const y = y1 + t * (y2 - y1);
+
+    let reCalc = {x,y};
+    
+    //If border is hit, loop back around 
+    if(t>1){
+      t = 0;
+    }
+
+    //If out of boundary, use recursion until it is
+    if(!isPointInTriangle(x,y)){
+      reCalc = interpolate(x1, y1, x2, y2, t+0.2);
+    }
+    
+    return reCalc;
+  }
 
 
   //Calculate the dots and colors on the dots on a confusion line
@@ -161,9 +197,9 @@ function Color({ srgbValue, globalNumColors, numConfusionLines }) {
     //TODO random interpolation inside triangle, CURRENTLY STATIC
     let dot;
     if(xCoor){ //Checks if x2 and y2 coordinates need to be swapped depending on the confusion line, tritan differs from deutan and protan
-      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,(0.55+j/15));
+      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,(j/10));
     } else {
-      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),(0.55+j/15));
+      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),(j/10));
     }
 
     // let color = calcSRGB(100*dot.x,100-100*dot.y);
@@ -173,6 +209,8 @@ function Color({ srgbValue, globalNumColors, numConfusionLines }) {
 
   //List of colors for a selected confusion line
   let listConfusionColors = useRef([]);
+  //Coordinates for current confusion line for brightness slider to use for updating
+  let listConfusionCoords = useRef(null);
 
 //Prevent DOM from lagging one state behind by forcing an update with a dummy decoy
   useEffect(() => {
@@ -223,19 +261,21 @@ function Color({ srgbValue, globalNumColors, numConfusionLines }) {
                       <th key={j + "dot"} id={"radioLine-"+j} onChange={() => {
                         //Reset other confusion lines
                           listConfusionColors.current = [];
+                          listConfusionCoords.current = 0;
                           for (let n = 0; n < numConfusionLines; n++){
                             document.getElementById(`${n}-line`).style.strokeWidth = 2;
                           }
                           //Get color of each point in this confusion line
                           for (let m = 0; m < globalNumColors; m++){
                             listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
+                            listConfusionCoords.current = j;
                           }
                           document.getElementById(`${j-1}-line`).style.strokeWidth = 4;
       
                           srgbValue(listConfusionColors.current);
                         }
                       }><label>Line {j}<br/><input type="radio" name="colorLine" id={"mm"+j}></input></label></th>
-                    ) : j === 0 && i % 2 === 1? (
+                    ) : j === 0 && i <= globalNumColors / 2 ? (
                       <th key={j + "dot"}>Motive</th>
                     ) : j === 0 ? (
                       <th key={j + "dot"}>Foreground</th>
@@ -256,9 +296,26 @@ function Color({ srgbValue, globalNumColors, numConfusionLines }) {
         </tbody>
       </table>
       </div> 
+      <label>Brightness: 
+        <input type="range" min="0" max="100" value={sliderBright} onMouseUp={() => {
+          if(listConfusionCoords.current === null){
+            return;
+          }
+          listConfusionColors.current = [];
+          for (let m = 0; m < globalNumColors; m++){
+              listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${listConfusionCoords.current-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${listConfusionCoords.current-1}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
+            }
+            srgbValue(listConfusionColors.current);}} 
+          onChange={(e) => {
+          changeBrightness(e); 
+          }}></input>
+        {sliderBright}
+      </label>
     <div style={{height: "400px", width: "400px"}}>
       <svg style={{height:"75%", width: "75%"}}>
 
+        {/* Chromaticity diagram */}
+        <image href={chromaticityImage} x={"5%"} y={"7.5%"} style={{filter: `brightness(${sliderBright}%)`}} width="86.7%" />
 
         {/* Dynamic creation of confusion lines */}
         {/* Protan */}
@@ -425,27 +482,15 @@ function Color({ srgbValue, globalNumColors, numConfusionLines }) {
 
 
         {/* White point D65 Wikipedia, find good paper instead */}
-        <circle style={{stroke:'grey', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * 0.31272) * 0.8}%`} cy={`${10 + (100 - (100 * 0.32903)) * 0.8}%`} />
+        {/* <circle style={{stroke:'grey', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * whitePoint.x) * 0.8}%`} cy={`${10 + (100 - (100 * whitePoint.y)) * 0.8}%`} /> */}
 
 
         {/* Possibly inaccurate sRGB triangle, find good source */}
-        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * 0.64) * 0.8}%`} y1={`${10 + (100 - (100 * 0.33)) * 0.8}%`} x2={`${10 + (100 * 0.3) * 0.8}%`} y2={`${10 + (100 - (100 * 0.6)) * 0.8}%`} />
-        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * 0.30) * 0.8}%`} y1={`${10 + (100 - (100 * 0.60)) * 0.8}%`} x2={`${10 + (100 * 0.15) * 0.8}%`} y2={`${10 + (100 - (100 * 0.06)) * 0.8}%`} />
-        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * 0.15) * 0.8}%`} y1={`${10 + (100 - (100 * 0.06)) * 0.8}%`} x2={`${10 + (100 * 0.64) * 0.8}%`} y2={`${10 + (100 - (100 * 0.33)) * 0.8}%`} />
+        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * sRGBTriangle.a.x) * 0.8}%`} y1={`${10 + (100 - (100 * sRGBTriangle.a.y)) * 0.8}%`} x2={`${10 + (100 * sRGBTriangle.b.x) * 0.8}%`} y2={`${10 + (100 - (100 * sRGBTriangle.b.y)) * 0.8}%`} />
+        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * sRGBTriangle.b.x) * 0.8}%`} y1={`${10 + (100 - (100 * sRGBTriangle.b.y)) * 0.8}%`} x2={`${10 + (100 * sRGBTriangle.c.x) * 0.8}%`} y2={`${10 + (100 - (100 * sRGBTriangle.c.y)) * 0.8}%`} />
+        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * sRGBTriangle.c.x) * 0.8}%`} y1={`${10 + (100 - (100 * sRGBTriangle.c.y)) * 0.8}%`} x2={`${10 + (100 * sRGBTriangle.a.x) * 0.8}%`} y2={`${10 + (100 - (100 * sRGBTriangle.a.y)) * 0.8}%`} />
 
       </svg>
-
-      {/* <div ref={colorBox} style={{width: "25%", height: "80%", float:"left", backgroundColor: "rgb("+ calcSRGBClick()[0] +","+ calcSRGBClick()[1] +","+ calcSRGBClick()[2] +")"}}></div> */}
-      <label>Brightness: 
-        <input type="range" min="0" max="100" value={sliderBright} onChange={(e) => {
-          changeBrightness(e); 
-          srgbValue(listConfusionColors.current);
-          }}></input>
-        {sliderBright}
-      </label>
-
-      
-
     </div>
     </div>
 
