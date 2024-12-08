@@ -85,7 +85,7 @@ function ColorTest() {
     let [numConfusionLines] = useState(4); // How many special colors
 
     let [noiseLevel] = useState(0.000);
-    let [colRadius] = useState(0.15);
+    let [colRadius] = useState(0.02);
     
     let [globalCurrentType] = useState("Circle"); // Current type of figure to be drawn
 
@@ -581,7 +581,7 @@ function ColorTest() {
                 
                 //If correct, new character, if incorrect, easier test
                 //Limit on > 3 due to figure turning worse after that value
-                if(motive.current.value === key || noiseLevel > 0.02 ){//|| globalBorder === true){
+                if(motive.current.value === key || noiseLevel > 0.01 ){//|| globalBorder === true){
                     //Possible values for test
                     const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
                     const randomIndex = Math.floor(Math.random() * chars.length);
@@ -601,7 +601,7 @@ function ColorTest() {
                     svgList.current.push(svgCircles.current.innerHTML);
                 } else{
                     //If incorrect, increase noise
-                    noiseLevel += 0.004; 
+                    noiseLevel += 0.002; 
                     showColorChoice();
                     setColor();
                     drawSVG();          
@@ -821,7 +821,7 @@ function ColorTest() {
                             }}/>
                             <br></br>
                             <label> Collision radius? </label>
-                        <input type="number" defaultValue="0.15" min="0" max="1"  step={"0.01"}
+                        <input type="number" defaultValue="0.02" min="0" max="1"  step={"0.002"}
                             onInput={(e) => {
                                 let value = e.target.value;
 

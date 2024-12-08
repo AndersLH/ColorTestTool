@@ -211,14 +211,14 @@ function Color({  srgbValue,
     
     //If border of line is hit, loop back around and lower radius to prevent infinite loop 
     if(t > 1 && loop){
-      dot = interpolate(x1, y1, x2, y2, 0, i, j, true, radius-0.02);
+      dot = interpolate(x1, y1, x2, y2, 0, i, j, true, radius-0.001);
       return dot;
     }    
 
 
     //If out of boundary, use recursion until it is
     if(!isPointInTriangle(x,y)){
-      t += 0.08;
+      t += 0.07;
       dot = interpolate(x1, y1, x2, y2, t, i, j, true, radius);
       if(loop){
         return dot;
@@ -255,16 +255,19 @@ function Color({  srgbValue,
       const unitDirX = dirX / length;
       const unitDirY = dirY / length;
 
-      //Calculate perpendicular vector
-      const perpX = -unitDirY;
-      const perpY = unitDirX;
+      //Calculate perpendicular vectors, alternating sides
+      const perpX = j % 2 === 0 ? -unitDirY : unitDirY;
+      const perpY = j % 2 === 0 ? unitDirX : -unitDirX;
 
       //Calculate angle of the perpendicular vector
       const angle = Math.atan2(perpY, perpX);
 
-      //Add how far the dot will move out based on noise with the perpindicular angle
-      dot.x += noise * Math.cos(angle);
-      dot.y += noise * Math.sin(angle);
+      //Add a skew to prevent perfect perpindicularity which just creates another confusion line
+      const skew = (i * 0.1 - j * 0.2);
+
+      //Add how far the dot will move out based on noise with the angle
+      dot.x += noise * Math.cos(angle + skew);
+      dot.y += noise * Math.sin(angle + skew);
 
       addConfusionDots(dot, i, j);
     }
@@ -282,6 +285,9 @@ function Color({  srgbValue,
     //Small and big radius, 0.05 vs 0.15
     //Random tVale vs static 0.1
     //randomly take from other confusion lines, line 323
+    //More than 1 color each for noise makes it too noisy
+
+
     let dot;
     let tValue = 0.1; //Math.random();
     if(xCoor){ //Checks if x2 and y2 coordinates need to be swapped depending on the confusion line, tritan differs from deutan and protan
@@ -304,8 +310,6 @@ function Color({  srgbValue,
   useEffect(() => {
 
     if(document.getElementById("colorSelect")){
-      console.log(currentColorType)
-      console.log("-",listColors);
       document.getElementById("colorSelect").dispatchEvent(new MouseEvent("click",{bubbles: true} ));
     }
 
