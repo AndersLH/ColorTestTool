@@ -170,31 +170,67 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
   }
 
 
+  //List of dots for keeping a certain distance from each other
+  let listConfusionDots = useRef([]);
+
+  //Reset and initialize dots for new generation of lines on DOM update
+  for(let a = 0; a < numConfusionLines; a++){
+    listConfusionDots.current[a] = [];
+  }
+
+  //Save confusion dots in arrays within array for preventing collisions 
+  function addConfusionDots(dot, i, j){
+    listConfusionDots.current[i][j] = [];
+    // listConfusionDots.current[i][j].push(dot);
+    listConfusionDots.current[i][j][0] = dot;
+  }
+
+
+  // console.log("-----------------INITATE DOM----------------")
   //Interpolate and find a point t on line from x1,y1 to x2,y2 
-  function interpolate(x1, y1, x2, y2, t) {
-    //Add interpolation to sRGB triangle to ensure it is within boundaries
+  function interpolate(x1, y1, x2, y2, t, i, j, loop, radius) {
+
+    //Interpolate functions
     const x = x1 + t * (x2 - x1);
     const y = y1 + t * (y2 - y1);
+    let dot = {x: x,y: y};
 
-    let reCalc = {x,y};
     
-    //If border is hit, loop back around 
-    if(t>1){
-      t = 0;
-    }
+    //If border of line is hit, loop back around and lower radius to prevent infinite loop 
+    if(t > 1 && loop){
+      dot = interpolate(x1, y1, x2, y2, 0, i, j, true, radius-0.02);
+      return dot;
+    }    
 
-
-    // const isWithinRadius = (x1, y1, x2, y2, radius) => {
-    //   const distance = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-    //   return distance <= radius;
-    // };
 
     //If out of boundary, use recursion until it is
     if(!isPointInTriangle(x,y)){
-      reCalc = interpolate(x1, y1, x2, y2, t+0.1);
+      t += 0.03;
+      dot = interpolate(x1, y1, x2, y2, t, i, j, true, radius);
+      if(loop){
+        return dot;
+      }
     }
+  
     
-    return reCalc;
+
+    for(let a = 0; a < j; a++){
+      if(Math.sqrt((dot.x - listConfusionDots.current[i][a][0].x) ** 2 + (dot.y - listConfusionDots.current[i][a][0].y) ** 2) <= radius){
+        t += 0.03;
+        dot = interpolate(x1, y1, x2, y2, t, i, j, true, radius);
+        if(loop){
+          return dot;
+        }
+      }
+      
+    }
+
+
+    //Only save dot on a non-recursion dot
+    if(!loop){
+      addConfusionDots(dot, i, j);
+    }
+    return dot;
   }
 
 
@@ -205,18 +241,22 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
     //TODO random interpolation inside triangle, CURRENTLY STATIC
     let dot;
     if(xCoor){ //Checks if x2 and y2 coordinates need to be swapped depending on the confusion line, tritan differs from deutan and protan
-      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,0);
+      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,0.1, i, j, false, 0.05);
     } else {
-      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),0);
+      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),0.1, i, j, false, 0.05);
     }
 
-    return {x: dot.x, y: dot.y};
+    
+
+    return dot;
   }
 
   //List of colors for a selected confusion line
   let listConfusionColors = useRef([]);
   //Coordinates for current confusion line for brightness slider to use for updating
   let listConfusionCoords = useRef(null);
+
+
 
 
 //Prevent DOM from lagging one state behind by forcing an update with a dummy decoy
@@ -228,7 +268,6 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
     <div>
       <div style={{float:"right"}}>
         <h3>Type of color confusion lines:</h3>
-
 
         {/* Dropdown list with color types */}
         <select id="colorSelect" value={listColors} onChange={(e) => {
@@ -272,9 +311,8 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
                           //Get color of each point in this confusion line
                           for (let m = 0; m < globalNumColors; m++){
                             listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
+                            // listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${j-2}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-2}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
                             listConfusionCoords.current = j;
-
-
                           }
                           document.getElementById(`${j-1}-line`).style.strokeWidth = 4;
       
@@ -328,37 +366,42 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
         {
           Array.from(
             { length: numConfusionLines },
-            (_, i) => listColors === "prot" ? (
-              <React.Fragment key={i + "pline"}>
-                {/* Confusion lines */}
-                <line key={i+"p"} 
-                  style={{stroke:'red', strokeWidth:'2'}} 
-                  id={i+"-line"}
-                  x1={`${10 + (100 * protan.x1) * 0.8}%`} 
-                  y1={`${10 + (100 - (100 * protan.y1)) * 0.8}%`} 
-                  x2={`${10 + (100 * protan.stat) * 0.8}%`} 
-                  y2={`${10 + (100 - (100 * calcConfusionLine(i,protan.x2,protan.y2))) * 0.8}%`} //0.14 and 0.67 values found manually through testing
-                  /> 
-                  {
-                  Array.from(
-                  { length: globalNumColors },
-                    (_, j) => {
-                      const calcDot = calcConfusionDot(protan.x1, protan.y1, protan.x2, protan.y2, protan.stat, false, i,j);
-                      return(
-                        // Confusion dots
-                        <circle key={j+"dot-"+i+"t"} 
-                        style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
-                        id={i+"-line-"+j+"-dot"}
-                        data-coord-x={calcDot.x}
-                        data-coord-y={calcDot.y}
-                        cx={`${10 + (100 * calcDot.x) * 0.8}%`} 
-                        cy={`${10 + (100 - (100 * calcDot.y)) * 0.8}%`} />    
-                      ) 
+            (_, i) => { 
+              if (listColors === "prot")  {
+                return(
+                  <React.Fragment key={i + "pline"}>
+                    {/* Confusion lines */}
+                    <line key={i+"p"} 
+                      style={{stroke:'red', strokeWidth:'2'}} 
+                      id={i+"-line"}
+                      x1={`${10 + (100 * protan.x1) * 0.8}%`} 
+                      y1={`${10 + (100 - (100 * protan.y1)) * 0.8}%`} 
+                      x2={`${10 + (100 * protan.stat) * 0.8}%`} 
+                      y2={`${10 + (100 - (100 * calcConfusionLine(i,protan.x2,protan.y2))) * 0.8}%`} //0.14 and 0.67 values found manually through testing
+                      /> 
+                      {
+                      Array.from(
+                      { length: globalNumColors },
+                        (_, j) => {
+                          //Calculate confusion dot
+                          const calcDot = calcConfusionDot(protan.x1, protan.y1, protan.x2, protan.y2, protan.stat, false, i,j);
+                          return(
+                            // Confusion dots
+                            <circle key={j+"dot-"+i+"t"} 
+                            style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
+                            id={i+"-line-"+j+"-dot"}
+                            data-coord-x={calcDot.x}
+                            data-coord-y={calcDot.y}
+                            cx={`${10 + (100 * calcDot.x) * 0.8}%`} 
+                            cy={`${10 + (100 - (100 * calcDot.y)) * 0.8}%`} />    
+                          ) 
+                        }
+                      )
                     }
-                  )
-                }
-              </React.Fragment>
-            ) : null
+                  </React.Fragment>
+                )
+              } return null;
+            }
           )
         }
 
@@ -366,37 +409,42 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
         { 
           Array.from(
             { length: numConfusionLines },
-            (_, i) => listColors === "deut" ? (
-              <React.Fragment key={i + "dline"}>
-                {/* Confusion lines */}
-                <line key={i+"d"} 
-                  style={{stroke:'green', strokeWidth:'2'}} 
-                  id={i+"-line"}
-                  x1={`${10 + (100 * deutan.x1) * 0.8}%`} 
-                  y1={`${10 + (100 - (100 * deutan.y1)) * 0.8}%`} 
-                  x2={`${10 + (100 * deutan.stat) * 0.8}%`} 
-                  y2={`${10 + (100 - (100 * calcConfusionLine(i,deutan.x2,deutan.y2))) * 0.8}%`} 
-                  /> 
-                  {
-                  Array.from(
-                    { length: globalNumColors },
-                      (_, j) => {
-                        const calcDot = calcConfusionDot(deutan.x1, deutan.y1, deutan.x2, deutan.y2, deutan.stat, false, i,j);
-                        return(
-                          // Confusion dots
-                          <circle key={j+"dot-"+i+"t"} 
-                          style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
-                          id={i+"-line-"+j+"-dot"}
-                          data-coord-x={calcDot.x}
-                          data-coord-y={calcDot.y}
-                          cx={`${10 + (100 * calcDot.x) * 0.8}%`} 
-                          cy={`${10 + (100 - (100 * calcDot.y)) * 0.8}%`} />    
-                        ) 
-                      }
-                    )
-                }
-              </React.Fragment>
-            ) : null
+            (_, i) => { 
+              if (listColors === "deut")  {
+                return(
+                  <React.Fragment key={i + "dline"}>
+                    {/* Confusion lines */}
+                    <line key={i+"d"} 
+                      style={{stroke:'green', strokeWidth:'2'}} 
+                      id={i+"-line"}
+                      x1={`${10 + (100 * deutan.x1) * 0.8}%`} 
+                      y1={`${10 + (100 - (100 * deutan.y1)) * 0.8}%`} 
+                      x2={`${10 + (100 * deutan.stat) * 0.8}%`} 
+                      y2={`${10 + (100 - (100 * calcConfusionLine(i,deutan.x2,deutan.y2))) * 0.8}%`} 
+                      /> 
+                      {
+                      Array.from(
+                        { length: globalNumColors },
+                          (_, j) => {
+                            //Calculate confusion dot
+                            const calcDot = calcConfusionDot(deutan.x1, deutan.y1, deutan.x2, deutan.y2, deutan.stat, false, i,j);
+                            return(
+                              // Confusion dots
+                              <circle key={j+"dot-"+i+"t"} 
+                              style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
+                              id={i+"-line-"+j+"-dot"}
+                              data-coord-x={calcDot.x}
+                              data-coord-y={calcDot.y}
+                              cx={`${10 + (100 * calcDot.x) * 0.8}%`} 
+                              cy={`${10 + (100 - (100 * calcDot.y)) * 0.8}%`} />    
+                            ) 
+                          }
+                        )
+                    }
+                  </React.Fragment>
+                )
+              } return null;
+            }
           )
         }
 
@@ -404,36 +452,41 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
         {
           Array.from(
             { length: numConfusionLines },
-            (_, i) => listColors === "trit" ? (
-              <React.Fragment key={i + "tline"}>
-                {/* Confusion lines */}
-                <line key={i+"t"} 
-                  style={{stroke:'blue', strokeWidth:'2'}} 
-                  id={i+"-line"}
-                  x1={`${10 + (100 * tritan.x1) * 0.8}%`} 
-                  y1={`${10 + (100 - (100 * tritan.y1)) * 0.8}%`} 
-                  x2={`${10 + (100 * calcConfusionLine(i,tritan.x2,tritan.y2)) * 0.8}%`}
-                  y2={`${10 + (100 - (100 * tritan.stat)) * 0.8}%`} />
-                {
-                Array.from(
-                  { length: globalNumColors },
-                    (_, j) => {
-                      const calcDot = calcConfusionDot(tritan.x1, tritan.y1, tritan.x2, tritan.y2, tritan.stat, true, i,j);
-                      return(
-                        // Confusion dots
-                        <circle key={j+"dot-"+i+"t"} 
-                        style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
-                        id={i+"-line-"+j+"-dot"}
-                        data-coord-x={calcDot.x}
-                        data-coord-y={calcDot.y}
-                        cx={`${10 + (100 * calcDot.x) * 0.8}%`} 
-                        cy={`${10 + (100 - (100 * calcDot.y)) * 0.8}%`} />    
-                      ) 
+            (_, i) => { 
+              if (listColors === "trit")  {
+                return(
+                  <React.Fragment key={i + "tline"}>
+                    {/* Confusion lines */}
+                    <line key={i+"t"} 
+                      style={{stroke:'blue', strokeWidth:'2'}} 
+                      id={i+"-line"}
+                      x1={`${10 + (100 * tritan.x1) * 0.8}%`} 
+                      y1={`${10 + (100 - (100 * tritan.y1)) * 0.8}%`} 
+                      x2={`${10 + (100 * calcConfusionLine(i,tritan.x2,tritan.y2)) * 0.8}%`}
+                      y2={`${10 + (100 - (100 * tritan.stat)) * 0.8}%`} />
+                    {
+                    Array.from(
+                      { length: globalNumColors },
+                        (_, j) => {
+                          //Calculate confusion dot
+                          const calcDot = calcConfusionDot(tritan.x1, tritan.y1, tritan.x2, tritan.y2, tritan.stat, true, i,j);
+                          return(
+                            // Confusion dots
+                            <circle key={j+"dot-"+i+"t"} 
+                            style={{stroke:'black', strokeWidth:'2'}} r={"2"} 
+                            id={i+"-line-"+j+"-dot"}
+                            data-coord-x={calcDot.x}
+                            data-coord-y={calcDot.y}
+                            cx={`${10 + (100 * calcDot.x) * 0.8}%`} 
+                            cy={`${10 + (100 - (100 * calcDot.y)) * 0.8}%`} />    
+                          ) 
+                        }
+                      )
                     }
-                  )
-                }
-              </React.Fragment>
-            ) : null
+                  </React.Fragment>
+                )
+              } return null;
+            }
           )
         }
 
