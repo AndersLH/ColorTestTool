@@ -50,12 +50,25 @@ let cfList = [];
 // let colRadius = 0.15;
 // let tValue = 0.1;//Math.random();
 // let currentRadio = 0;
-function Color({ srgbValue, recieveRadioVal, recieveBrightnessVal, currentRadio, globalNumColors, numConfusionLines, noiseLevel, colRadius, currentBrightness}) {
+function Color({  srgbValue, 
+                  recieveRadioVal, 
+                  recieveBrightnessVal, 
+                  recieveColorType,
+                  currentRadio, 
+                  globalNumColors, 
+                  numConfusionLines,
+                  noiseLevel, 
+                  colRadius, 
+                  currentBrightness, 
+                  currentColorType}) {
 
+                    
   //Click coordinates
   // const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
   //Slider for brightness setting
   const [sliderBright, setSliderBright] = useState(currentBrightness);
+  let [listColors,setListColors] = useState(currentColorType);
+
 
   //Coordinates for white point D65
   let whitePoint = {x: 0.31272, y: 0.32903};
@@ -72,9 +85,6 @@ function Color({ srgbValue, recieveRadioVal, recieveBrightnessVal, currentRadio,
   const deutan = {x1: 1.4, y1: -0.4, x2: 0.3, y2: 0.74, stat:0.1}; 
   const tritan = {x1: 0.17045, y1: 0, x2: 0.35, y2: 0.95, stat:0.7};
 
-
-  //Controls which confusion lines to show
-  let [listColors,setListColors] = useState("prot");
 
   //Temporary store lines and wait for refresh button generate new ones
   let [generateNewCF, setGenerateNewCF] = useState(true);
@@ -142,12 +152,12 @@ function Color({ srgbValue, recieveRadioVal, recieveBrightnessVal, currentRadio,
                                    sRGBTriangle.b.x, sRGBTriangle.b.y, 
                                    sRGBTriangle.c.x, sRGBTriangle.c.y);
   
-    //Triangles with x and y, which should all add up to 'triangleArea' if x and y are within the original
+    //Calculate sub-triangle areas
     const area1 = triangleArea(x, y, sRGBTriangle.b.x, sRGBTriangle.b.y, sRGBTriangle.c.x, sRGBTriangle.c.y);
     const area2 = triangleArea(sRGBTriangle.a.x, sRGBTriangle.a.y, x, y, sRGBTriangle.c.x, sRGBTriangle.c.y);
     const area3 = triangleArea(sRGBTriangle.a.x, sRGBTriangle.a.y, sRGBTriangle.b.x, sRGBTriangle.b.y, x, y);
   
-    // Check if the sum of the sub-triangle areas equals the total area
+    //Check if the sum of the sub-triangle areas equals the total area
     return Math.abs(totalArea - (area1 + area2 + area3)) < 1e-9; // Allow for floating-point precision errors
   }
 
@@ -234,8 +244,25 @@ function Color({ srgbValue, recieveRadioVal, recieveBrightnessVal, currentRadio,
     if(!loop){
 
       //Random angle in any direction
-      const angle = Math.random() * 2 * Math.PI; 
-      //Add how far the dot will move out based on noise
+      // const angle = Math.random() * 2 * Math.PI; 
+
+      //Calculated angle perpindicular to line
+      const dirX = x2 - x1;
+      const dirY = y2 - y1;
+
+      //Normalize the direction vector
+      const length = Math.sqrt(dirX * dirX + dirY * dirY);
+      const unitDirX = dirX / length;
+      const unitDirY = dirY / length;
+
+      //Calculate perpendicular vector
+      const perpX = -unitDirY;
+      const perpY = unitDirX;
+
+      //Calculate angle of the perpendicular vector
+      const angle = Math.atan2(perpY, perpX);
+
+      //Add how far the dot will move out based on noise with the perpindicular angle
       dot.x += noise * Math.cos(angle);
       dot.y += noise * Math.sin(angle);
 
@@ -275,12 +302,19 @@ function Color({ srgbValue, recieveRadioVal, recieveBrightnessVal, currentRadio,
 
   //Re-click radio button after DOM update
   useEffect(() => {
+
+    if(document.getElementById("colorSelect")){
+      console.log(currentColorType)
+      console.log("-",listColors);
+      document.getElementById("colorSelect").dispatchEvent(new MouseEvent("click",{bubbles: true} ));
+    }
+
     //Prevent error when no radio is selected
     if(currentRadio > 0){
       document.getElementById("mm"+(currentRadio)).dispatchEvent(new MouseEvent("click", { bubbles: true }));
     }
 
-  }, [currentRadio]);
+  }, [currentColorType, currentRadio]);
 
 //Prevent DOM from lagging one state behind by forcing an update with a dummy decoy
   useEffect(() => {
@@ -294,7 +328,8 @@ function Color({ srgbValue, recieveRadioVal, recieveBrightnessVal, currentRadio,
 
         {/* Dropdown list with color types */}
         <select id="colorSelect" value={listColors} onChange={(e) => {
-          setListColors(e.target.value); 
+          setListColors(e.target.value);
+          recieveColorType(e.target.value); 
           setGenerateNewCF(true); 
           setDecoyState(true);
           //Reset radio buttons in table and reset list

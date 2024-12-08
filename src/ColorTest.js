@@ -79,6 +79,7 @@ function ColorTest() {
     
     let [currentRadio] = useState(0);
     let [currentBrightness] = useState(100);
+    let [currentColorType] = useState("prot");
     let [globalNumColors] = useState(1); // How many colors on motive and background(each)
     let [globalNumSpecialColors] = useState(1); // How many special colors
     let [numConfusionLines] = useState(4); // How many special colors
@@ -314,8 +315,10 @@ function ColorTest() {
                         colRadius={colRadius} 
                         currentRadio={currentRadio} 
                         currentBrightness={currentBrightness}
+                        currentColorType={currentColorType}
                         recieveRadioVal={(value) => recieveRadio(value)} 
                         recieveBrightnessVal={(value) => recieveBrightness(value)}
+                        recieveColorType={(value) => recieveColor(value)}
                         srgbValue={(value) => recieveSrgbValue(value)} />
             );
         
@@ -526,8 +529,11 @@ function ColorTest() {
         currentRadio = newRadio;
     }
 
-    const recieveBrightness = (newVal) => {
-        currentBrightness = newVal;
+    const recieveBrightness = (newBri) => {
+        currentBrightness = newBri;
+    }
+    const recieveColor = (newCol) => {
+        currentColorType = newCol;
     }
 
     //Generate new figures from button push
