@@ -77,9 +77,14 @@ function ColorTest() {
     let [motiveH] = useState(400); // Dimension of motive
     let [motiveW] = useState(400);
     
+    let [currentRadio] = useState(0);
+    let [currentBrightness] = useState(100);
     let [globalNumColors] = useState(1); // How many colors on motive and background(each)
     let [globalNumSpecialColors] = useState(1); // How many special colors
     let [numConfusionLines] = useState(4); // How many special colors
+
+    let [noiseLevel] = useState(0.000);
+    let [colRadius] = useState(0.15);
     
     let [globalCurrentType] = useState("Circle"); // Current type of figure to be drawn
 
@@ -303,10 +308,17 @@ function ColorTest() {
             // Can use existing instead
             const root = ReactDOM.createRoot(input);
             root.render(
-                <Color globalNumColors={globalNumColors*2} numConfusionLines={numConfusionLines} srgbValue={(value) => recieveSrgbValue(value)} />
+                <Color  globalNumColors={globalNumColors*2} 
+                        numConfusionLines={numConfusionLines} 
+                        noiseLevel={noiseLevel} 
+                        colRadius={colRadius} 
+                        currentRadio={currentRadio} 
+                        currentBrightness={currentBrightness}
+                        recieveRadioVal={(value) => recieveRadio(value)} 
+                        recieveBrightnessVal={(value) => recieveBrightness(value)}
+                        srgbValue={(value) => recieveSrgbValue(value)} />
             );
         
-            
             input.id = "fil" + i;
             input.className = "fillColorsClass";
             // input.value = `${hexVal.current}`;
@@ -437,6 +449,7 @@ function ColorTest() {
 
         //Set style color for circles
         for (let i = 0; i < globalNumColors * 2; i++) {
+            //mix colors TODO
             document.getElementById("fil"+i).value =  newSrgb[i]  // hexList.current[i];
         }
 
@@ -509,6 +522,14 @@ function ColorTest() {
 
     };
 
+    const recieveRadio = (newRadio) => {
+        currentRadio = newRadio;
+    }
+
+    const recieveBrightness = (newVal) => {
+        currentBrightness = newVal;
+    }
+
     //Generate new figures from button push
     let placeCirclesButton = useRef(null);
 
@@ -519,31 +540,66 @@ function ColorTest() {
         const handleKeyDown = (event) => {
           const key = event.key;
           //Ensure it is a-z or 0-9
-          if (/^[a-z0-9]$/.test(key)) {
-            placeCirclesButton.current.click();
+        //   if (/^[a-z0-9]$/.test(key)) {
+        //     placeCirclesButton.current.click();
             
-            //If correct, new character, if incorrect, easier test
-            //Limit on > 3 due to figure turning worse after that value
-            if(motive.current.value === key || globalRadiusChange > 3 ){//|| globalBorder === true){
-                //Possible values for test
-                const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-                const randomIndex = Math.floor(Math.random() * chars.length);
-                //Pick random value for next test
-                motive.current.value = chars[randomIndex];
-                getTextMap(chars[randomIndex]);
-                // eslint-disable-next-line
-                globalRadiusChange = 0;
-                // globalBorder = false;
+        //     //If correct, new character, if incorrect, easier test
+        //     //Limit on > 3 due to figure turning worse after that value
+        //     if(motive.current.value === key || globalRadiusChange > 3 ){//|| globalBorder === true){
+        //         //Possible values for test
+        //         const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+        //         const randomIndex = Math.floor(Math.random() * chars.length);
+        //         //Pick random value for next test
+        //         motive.current.value = chars[randomIndex];
+        //         getTextMap(chars[randomIndex]);
+        //         // eslint-disable-next-line
+        //         globalRadiusChange = 0;
+        //         // globalBorder = false;
 
-                //If correct add to list
-                svgList.current.push(svgCircles.current.innerHTML);
-                //TODO: if failed and it reaches globalRadisuChange 4, make special case, we still want to see it in data
-            } else{
-                //If incorrect, increase figure size
-                globalRadiusChange++;
-                // globalBorder = true;
+        //         //If correct add to list
+        //         svgList.current.push(svgCircles.current.innerHTML);
+        //         //TODO: if failed and it reaches globalRadisuChange 4, make special case, we still want to see it in data
+        //     } else{
+        //         //If incorrect, increase figure size
+        //         globalRadiusChange++;
+        //         // globalBorder = true;
                 
-            }
+        //     }
+
+        //Parameters: size, border, brightness, color noise, figure type
+
+
+            //Increase color noise
+            if (/^[a-z0-9]$/.test(key)) {
+                placeCirclesButton.current.click();
+                
+                //If correct, new character, if incorrect, easier test
+                //Limit on > 3 due to figure turning worse after that value
+                if(motive.current.value === key || noiseLevel > 0.02 ){//|| globalBorder === true){
+                    //Possible values for test
+                    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+                    const randomIndex = Math.floor(Math.random() * chars.length);
+                    //Pick random value for next test
+                    motive.current.value = chars[randomIndex];
+                    getTextMap(chars[randomIndex]);
+                    // eslint-disable-next-line
+                    noiseLevel = 0;
+                    showColorChoice();
+                    setColor();
+                    drawSVG();   
+
+
+
+    
+                    //If correct add to list
+                    svgList.current.push(svgCircles.current.innerHTML);
+                } else{
+                    //If incorrect, increase noise
+                    noiseLevel += 0.004; 
+                    showColorChoice();
+                    setColor();
+                    drawSVG();          
+                }
 
           }
         };
@@ -563,8 +619,8 @@ function ColorTest() {
     return (
         <div>
             <h1>Dynamic Ishihara Plates Project</h1>
-        <button onClick={() => console.log(svgList.current.at(-1))}>Last one</button>
-        <button onClick={() => console.log(svgList.current)}>All</button>
+        {/* <button onClick={() => console.log(svgList.current.at(-1))}>Last one</button>
+        <button onClick={() => console.log(svgList.current)}>All</button> */}
 
 
 
@@ -601,7 +657,7 @@ function ColorTest() {
                         <br />
                         <br />
                         <label> Text Motive: </label>
-                        <input type="text" maxLength="2" defaultValue={"3"} style={{width:"35px"}} ref={motive} />
+                        <input type="text" maxLength="2" defaultValue={"3"} style={{width:"35px", display:"none"}} ref={motive} />
                         <button onClick={() => getTextMap(motive.current.value)}>Make</button>
                         <br />
                         <br />
@@ -737,7 +793,6 @@ function ColorTest() {
                                 }
 
                                 value = value.slice(0, e.target.maxLength);
-
                                 numConfusionLines = Number(value);
                                 showColorChoice();
                                 setColor();
@@ -746,6 +801,31 @@ function ColorTest() {
                                 e.target.value = value;
                             }}/>
                             <br></br>
+                            <label> Level of color noise? </label>
+                        <input type="number" defaultValue="0.000" min="0" max="1"  step={"0.002"}
+                            onInput={(e) => {
+                                let value = e.target.value;
+
+                                noiseLevel = Number(value); 
+                                showColorChoice();
+                                setColor();
+                                drawSVG();
+
+                                e.target.value = value;
+                            }}/>
+                            <br></br>
+                            <label> Collision radius? </label>
+                        <input type="number" defaultValue="0.15" min="0" max="1"  step={"0.01"}
+                            onInput={(e) => {
+                                let value = e.target.value;
+
+                                colRadius = Number(value); 
+                                showColorChoice();
+                                setColor();
+                                drawSVG();
+
+                                e.target.value = value;
+                            }}/>
 
                         <hr />
                         <div ref={colorChoice}></div>

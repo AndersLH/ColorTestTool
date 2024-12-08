@@ -46,16 +46,19 @@ function xyy2srgb(x, y, Y) {
 //List of confusion lines to perserve lines on DOM update
 let cfList = [];
 
-
-function Color({ srgbValue, globalNumColors, numConfusionLines}) {
+// let noiseLevel = 0.02;
+// let colRadius = 0.15;
+// let tValue = 0.1;//Math.random();
+// let currentRadio = 0;
+function Color({ srgbValue, recieveRadioVal, recieveBrightnessVal, currentRadio, globalNumColors, numConfusionLines, noiseLevel, colRadius, currentBrightness}) {
 
   //Click coordinates
   // const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
   //Slider for brightness setting
-  const [sliderBright, setSliderBright] = useState(100);
+  const [sliderBright, setSliderBright] = useState(currentBrightness);
 
   //Coordinates for white point D65
-  // let whitePoint = {x: 0.31272, y: 0.32903};
+  let whitePoint = {x: 0.31272, y: 0.32903};
 
   //Coordinates for creating sRGB triangle
   let sRGBTriangle = {a: {x: 0.64, y: 0.33}, b: {x: 0.30, y: 0.60}, c: {x: 0.15, y: 0.06}}
@@ -83,6 +86,7 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
   //Update brightness slider
   const changeBrightness = (event) => {
     setSliderBright(event.target.value);
+    recieveBrightnessVal(event.target.value);
   }
 
   //Calculate sRGB values from x,y coordinates and slider brightness
@@ -155,7 +159,7 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
     //Calculate a random number in the interval between the new min and max
     let newMin = split*i + min;
     let newMax = split*(i+1) + min;
-    let retNum = Math.random() * (newMax - newMin) + newMin;
+    let retNum =  (newMax - newMin) + newMin; //Math.random() * ... for random confusion lines
 
     //Add to array for storage if refresh button has been pressed
     if (generateNewCF && decoyState){
@@ -188,13 +192,12 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
 
   // console.log("-----------------INITATE DOM----------------")
   //Interpolate and find a point t on line from x1,y1 to x2,y2 
-  function interpolate(x1, y1, x2, y2, t, i, j, loop, radius) {
+  function interpolate(x1, y1, x2, y2, t, i, j, loop, radius, noise) {
 
     //Interpolate functions
     const x = x1 + t * (x2 - x1);
     const y = y1 + t * (y2 - y1);
     let dot = {x: x,y: y};
-
     
     //If border of line is hit, loop back around and lower radius to prevent infinite loop 
     if(t > 1 && loop){
@@ -205,7 +208,7 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
 
     //If out of boundary, use recursion until it is
     if(!isPointInTriangle(x,y)){
-      t += 0.03;
+      t += 0.08;
       dot = interpolate(x1, y1, x2, y2, t, i, j, true, radius);
       if(loop){
         return dot;
@@ -213,10 +216,11 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
     }
   
     
-
+    //Check if current dot is too close to another dot
     for(let a = 0; a < j; a++){
-      if(Math.sqrt((dot.x - listConfusionDots.current[i][a][0].x) ** 2 + (dot.y - listConfusionDots.current[i][a][0].y) ** 2) <= radius){
-        t += 0.03;
+      if(Math.sqrt((dot.x - listConfusionDots.current[i][a][0].x) ** 2 + (dot.y - listConfusionDots.current[i][a][0].y) ** 2) <= radius 
+        || Math.sqrt((dot.x - whitePoint.x) ** 2 + (dot.y - whitePoint.y) ** 2) <= 0.05){
+        t += 0.003;
         dot = interpolate(x1, y1, x2, y2, t, i, j, true, radius);
         if(loop){
           return dot;
@@ -228,6 +232,13 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
 
     //Only save dot on a non-recursion dot
     if(!loop){
+
+      //Random angle in any direction
+      const angle = Math.random() * 2 * Math.PI; 
+      //Add how far the dot will move out based on noise
+      dot.x += noise * Math.cos(angle);
+      dot.y += noise * Math.sin(angle);
+
       addConfusionDots(dot, i, j);
     }
     return dot;
@@ -238,12 +249,18 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
   function calcConfusionDot(x1, y1, x2, y2, stat, xCoor, i,j){
 
     //Calculate the dots based on their respective confusion lines and interpolate
-    //TODO random interpolation inside triangle, CURRENTLY STATIC
+
+    //List to test supervisor:
+    //Low vs high brightness
+    //Small and big radius, 0.05 vs 0.15
+    //Random tVale vs static 0.1
+    //randomly take from other confusion lines, line 323
     let dot;
+    let tValue = 0.1; //Math.random();
     if(xCoor){ //Checks if x2 and y2 coordinates need to be swapped depending on the confusion line, tritan differs from deutan and protan
-      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,0.1, i, j, false, 0.05);
+      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,tValue, i, j, false, colRadius, noiseLevel);
     } else {
-      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),0.1, i, j, false, 0.05);
+      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),tValue, i, j, false, colRadius, noiseLevel);
     }
 
     
@@ -256,8 +273,14 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
   //Coordinates for current confusion line for brightness slider to use for updating
   let listConfusionCoords = useRef(null);
 
+  //Re-click radio button after DOM update
+  useEffect(() => {
+    //Prevent error when no radio is selected
+    if(currentRadio > 0){
+      document.getElementById("mm"+(currentRadio)).dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    }
 
-
+  }, [currentRadio]);
 
 //Prevent DOM from lagging one state behind by forcing an update with a dummy decoy
   useEffect(() => {
@@ -276,9 +299,11 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
           setDecoyState(true);
           //Reset radio buttons in table and reset list
           listConfusionColors.current = [];
+          recieveRadioVal(0);
           for(let i = 0; i < numConfusionLines; i++){
             document.getElementById("mm"+(i+1)).checked = "";
           }
+
         }}>
           <option value="prot">Protanopia</option>
           <option value="deut">Deuteranopia</option>
@@ -303,21 +328,23 @@ function Color({ srgbValue, globalNumColors, numConfusionLines}) {
                     ) : i === 0 ? (
                       <th key={j + "dot"} id={"radioLine-"+j} onChange={() => {
                         //Reset values for new confusion line
-                          listConfusionColors.current = [];
-                          listConfusionCoords.current = 0;
-                          for (let n = 0; n < numConfusionLines; n++){
-                            document.getElementById(`${n}-line`).style.strokeWidth = 2;
-                          }
-                          //Get color of each point in this confusion line
-                          for (let m = 0; m < globalNumColors; m++){
-                            listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
-                            // listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${j-2}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-2}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
-                            listConfusionCoords.current = j;
-                          }
-                          document.getElementById(`${j-1}-line`).style.strokeWidth = 4;
-      
-                          srgbValue(listConfusionColors.current);
+                        recieveRadioVal(j); //keep line selection during DOM update
+                        listConfusionColors.current = [];
+                        listConfusionCoords.current = 0;
+                        for (let n = 0; n < numConfusionLines; n++){
+                          document.getElementById(`${n}-line`).style.strokeWidth = 2;
                         }
+                        //Get color of each point in this confusion line
+                        for (let m = 0; m < globalNumColors; m++){
+                          listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
+                          //mix colors TODO
+                          // listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${Math.floor(Math.random() * numConfusionLines)}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${Math.floor(Math.random() * numConfusionLines)}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
+                          listConfusionCoords.current = j;
+                        }
+                        document.getElementById(`${j-1}-line`).style.strokeWidth = 4;
+    
+                        srgbValue(listConfusionColors.current);
+                      }
                       }><label>Line {j}<br/><input type="radio" name="colorLine" id={"mm"+j}></input></label></th>
                     ) : j === 0 && i <= globalNumColors / 2 ? (
                       <th key={j + "dot"}>Motive</th>
