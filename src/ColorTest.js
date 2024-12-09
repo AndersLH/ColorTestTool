@@ -447,7 +447,7 @@ function ColorTest() {
     }
 
     //List of svgs
-    let svgList = useRef([]);
+    // let svgList = useRef([]);
     //Div for all svg print
     let svgDiv = useRef(null);
 
@@ -463,7 +463,7 @@ function ColorTest() {
         }
 
 
-    //   Add each SVG string into the div
+    //   Add each SVG string into the div (early testing)
     // svgDiv.current.innerHTML = "";
     //   svgList.current.forEach((svgContent) => {
     //     const container = document.createElement('div');
@@ -545,13 +545,9 @@ function ColorTest() {
     //Generate new figures from button push
     let placeCirclesButton = useRef(null);
 
-    //Too big for excel, need another method
-    //FigureB64: "data:image/svg+xml;base64," + window.btoa(svgCircles.current.innerHTML)},
     //Data for excel sheet
     const dataExcel = [];
 
-    // ====== Figure size ====== //
-    //Useffect needed as it tries accessing before DOM loads
     useEffect(() => {
         const handleKeyDown = (event) => {
             const key = event.key;
@@ -559,6 +555,7 @@ function ColorTest() {
             //Toggle "command central"
             if (/^'$/.test(key)) {
                 wrapper.current.style.display = wrapper.current.style.display === "none" ? "block" : "none";
+                return;
             }
             
             //Prevent errors from starting too early
@@ -566,8 +563,6 @@ function ColorTest() {
                 return;
             }
                 
-
-            //Parameters: size, border, brightness, color noise, figure type
             let correctPress = false;
 
             //Check for correct key press or maxed paramters
@@ -626,8 +621,11 @@ function ColorTest() {
                     currentBrightness = 20;
                 }
 
-                svgList.current.push(svgCircles.current.innerHTML);
-                console.log(svgList.current);
+                //TODO: Potentially download the whole array worth with the excel file 
+
+                //Too big for excel, need another method
+                //FigureB64: "data:image/svg+xml;base64," + window.btoa(svgCircles.current.innerHTML)},                
+                // svgList.current.push(svgCircles.current.innerHTML);
 
 
             } else {
@@ -659,8 +657,7 @@ function ColorTest() {
         };
     }, []);
 
-    
-    //Original file from previous project index.html
+    //HTML
     
     return (
         <div>
@@ -796,7 +793,7 @@ function ColorTest() {
                         <br />
                         <br />
                         <button onClick={placeCircles} ref={placeCirclesButton}>Generate figures</button>
-                        {/* Eslint complains about href not being valid */}
+                        {/* Eslint complains about href not being valid, so how about you stop complaining!? */}
                         {/* eslint-disable-next-line */}
                         <a ref={exportOfSVG} href="#">
                             <button onClick={exportToSVGFile}>Download Plate</button>
