@@ -98,6 +98,7 @@ function ColorTest() {
     let fpsb = useRef(new Date()); // How many special colors
     let fpsCount = useRef(2);
     
+    let [activeTest] = useState("noise");
 
     // Main loop
     //Original file from previous project: core.js
@@ -565,57 +566,23 @@ function ColorTest() {
                 return;
             }
                 
-          //Ensure it is a-z or 0-9
-          if (/^[a-z0-9]$/.test(key) && activeTest === "size") {
-            placeCirclesButton.current.click();
-            
-            //If correct, new character, if incorrect, easier test
-            //Limit on > 3 due to figure turning worse after that value
-            if(motive.current.value === key || globalRadiusChange > 3 ){//|| globalBorder === true){
-                //Possible values for test
-                const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-                const randomIndex = Math.floor(Math.random() * chars.length);
-                //Pick random value for next test
-                motive.current.value = chars[randomIndex];
-                getTextMap(chars[randomIndex]);
-                // eslint-disable-next-line
-                globalRadiusChange = 0;
-                // globalBorder = false;
 
-                //If correct add to list
-                svgList.current.push(svgCircles.current.innerHTML);
-                //TODO: if failed and it reaches globalRadisuChange 4, make special case, we still want to see it in data
-            } else{
-                //If incorrect, increase figure size
-                globalRadiusChange++;
-                // globalBorder = true;
-                
-            }
-
-        //Parameters: size, border, brightness, color noise, figure type
-        
-
-        //Increase color noise
-        if (/^[a-z0-9]$/.test(key)) {
-            placeCirclesButton.current.click();
-            
+            //Parameters: size, border, brightness, color noise, figure type
             let correctPress = false;
-            //If correct, new character, if incorrect, easier test
-            //Limit on > 3 due to figure turning worse after that value
-            if(motive.current.value === key || noiseLevel > 0.01 ){//|| globalBorder === true){
-                correctPress = true;
-                //If correct add to list
-                svgList.current.push(svgCircles.current.innerHTML);
-            } else{
-                //If incorrect, increase noise
-                // eslint-disable-next-line
-                noiseLevel += 0.002; 
-                showColorChoice();
-                setColor();
-                drawSVG();          
-            }
-            
-            //Generate list of colors in string format 
+
+            //Check for correct key press or maxed paramters
+            if (/^[a-z0-9]$/.test(key)) {
+                //Simulate click on generate figures
+                placeCirclesButton.current.click();
+
+                //Test parameters
+                if(motive.current.value === key || globalRadiusChange > 3 || globalBorder || noiseLevel > 0.01 || (currentBrightness > 80 && activeTest === "brightness")){
+                    correctPress = true;
+                }
+            }         
+
+                
+            //Generate list of current colors into string format 
             let listColorString = "";
             for(let i = 0; i < globalNumColors*2; i++){
                 listColorString += currentColorList[i] 
@@ -623,40 +590,66 @@ function ColorTest() {
                     listColorString += ", "; 
                 }
             }
-            //Add to excel file
+            //Add data to excel file
             dataExcel.push({ 
                 ID: 1,  
                 Motive: motive.current.value, 
                 UserKey: key, 
                 CorrectPress: correctPress ? "yes" : "no", 
-                NoiseLevel: noiseLevel,
-                CircleSize: globalRadiusChange,
-                Border: globalBorder ? "yes" : "no",
-                ColorDeficiency: currentColorType,
+                NoiseLevel: activeTest === "noise" ? noiseLevel : "",
+                CircleSize: activeTest === "size" ? globalRadiusChange : "",
+                Border: activeTest === "border" ? globalBorder ? "yes" : "no" : "",
                 Brightness: currentBrightness, 
+                ColorDeficiency: currentColorType,
                 sRGB: listColorString,
             });
 
-            //If correctly pressed, reset paramters and new motive
+            //If correctly pressed or maxed parameters, reset paramters and set new motive
             if(correctPress){
-                //Possible values for test
+                //Pick new random motive for next test
                 const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
                 const randomIndex = Math.floor(Math.random() * chars.length);
-                //Pick random value for next test
+                //Add if check for same motive twice in a row 
                 motive.current.value = chars[randomIndex];
                 getTextMap(chars[randomIndex]);
+
+                //Reset paramters
+                // eslint-disable-next-line
                 noiseLevel = 0;
-                showColorChoice();
-                setColor();
-                drawSVG(); 
+                // eslint-disable-next-line
+                globalRadiusChange = 0;
+                // eslint-disable-next-line
+                globalBorder = false;
 
-                //Set a space in excel docuemnt between correct tries 
-                // dataExcel.push({ID:1})
+                if(activeTest === "brightness"){
+                // eslint-disable-next-line
+                    currentBrightness = 20;
+                }
+
+                svgList.current.push(svgCircles.current.innerHTML);
+                console.log(svgList.current);
+
+
+            } else {
+                //Change parameters after incorrect motive input
+                if(activeTest === "noise"){
+                    noiseLevel += 0.002;
+                }
+                if(activeTest === "size"){
+                    globalRadiusChange++;
+                }
+                if(activeTest === "border"){
+                    globalBorder = true;
+                }
+                if(activeTest === "brightness"){
+                    currentBrightness += 20;
+                }
             }
-
-
-          }
-        };
+            //Re-render color test
+            showColorChoice();
+            setColor();
+            drawSVG(); 
+        }
     
         window.addEventListener('keydown', handleKeyDown);
     
@@ -664,7 +657,7 @@ function ColorTest() {
         return () => {
           window.removeEventListener('keydown', handleKeyDown);
         };
-      }, []);
+    }, []);
 
     
     //Original file from previous project index.html
@@ -693,6 +686,23 @@ function ColorTest() {
             </div>
             <div ref={wrapper}>
                 <ExcelExport data={dataExcel} fileName="UserData" />
+                <select onChange={(e) => {
+                    activeTest = e.target.value; 
+                    //Set brightness to testing value
+                    if(e.target.value === "brightness"){currentBrightness=20;} 
+                    else {
+                        currentBrightness = 100;
+                    }
+                    //re-render after choice
+                    showColorChoice();
+                    setColor();
+                    drawSVG();
+                }}>
+                    <option value="noise">Noise</option>
+                    <option value="size">Size</option>
+                    <option value="border">Border</option>
+                    <option value="brightness">Brightness</option>
+                </select>
                 <div ref={controls}>
                     <fieldset style={{width: "20%", float: "left"}}>
                         <legend>Controls</legend>
