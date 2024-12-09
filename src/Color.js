@@ -200,7 +200,6 @@ function Color({  srgbValue,
   }
 
 
-  // console.log("-----------------INITATE DOM----------------")
   //Interpolate and find a point t on line from x1,y1 to x2,y2 
   function interpolate(x1, y1, x2, y2, t, i, j, loop, radius, noise) {
 
@@ -211,7 +210,7 @@ function Color({  srgbValue,
     
     //If border of line is hit, loop back around and lower radius to prevent infinite loop 
     if(t > 1 && loop){
-      dot = interpolate(x1, y1, x2, y2, 0, i, j, true, radius-0.001);
+      dot = interpolate(x1, y1, x2, y2, 0, i, j, true, radius-0.002);
       return dot;
     }    
 
@@ -265,7 +264,7 @@ function Color({  srgbValue,
       //Add a skew to prevent perfect perpindicularity which just creates another confusion line
       const skew = (i * 0.1 - j * 0.2);
 
-      //Add how far the dot will move out based on noise with the angle
+      //Add how far the dot will move out based on noise with the angle + skew
       dot.x += noise * Math.cos(angle + skew);
       dot.y += noise * Math.sin(angle + skew);
 
@@ -279,15 +278,6 @@ function Color({  srgbValue,
   function calcConfusionDot(x1, y1, x2, y2, stat, xCoor, i,j){
 
     //Calculate the dots based on their respective confusion lines and interpolate
-
-    //List to test supervisor:
-    //Low vs high brightness
-    //Small and big radius, 0.05 vs 0.15
-    //Random tVale vs static 0.1
-    //randomly take from other confusion lines, line 323
-    //More than 1 color each for noise makes it too noisy
-
-
     let dot;
     let tValue = 0.1; //Math.random();
     if(xCoor){ //Checks if x2 and y2 coordinates need to be swapped depending on the confusion line, tritan differs from deutan and protan
@@ -344,9 +334,9 @@ function Color({  srgbValue,
           }
 
         }}>
-          <option value="prot">Protanopia</option>
-          <option value="deut">Deuteranopia</option>
-          <option value="trit">Tritanopia</option>
+          <option value="protan">Protanopia</option>
+          <option value="deutan">Deuteranopia</option>
+          <option value="tritan">Tritanopia</option>
         </select>
 
       <table>
@@ -433,7 +423,7 @@ function Color({  srgbValue,
           Array.from(
             { length: numConfusionLines },
             (_, i) => { 
-              if (listColors === "prot")  {
+              if (listColors === "protan")  {
                 return(
                   <React.Fragment key={i + "pline"}>
                     {/* Confusion lines */}
@@ -476,7 +466,7 @@ function Color({  srgbValue,
           Array.from(
             { length: numConfusionLines },
             (_, i) => { 
-              if (listColors === "deut")  {
+              if (listColors === "deutan")  {
                 return(
                   <React.Fragment key={i + "dline"}>
                     {/* Confusion lines */}
@@ -519,7 +509,7 @@ function Color({  srgbValue,
           Array.from(
             { length: numConfusionLines },
             (_, i) => { 
-              if (listColors === "trit")  {
+              if (listColors === "tritan")  {
                 return(
                   <React.Fragment key={i + "tline"}>
                     {/* Confusion lines */}

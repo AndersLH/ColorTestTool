@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState } from "react";
 import Color from "./Color";
 import ReactDOM from "react-dom/client";
+import ExcelExport from './ExcelExport';
+
 
 function ColorTest() {
 
@@ -79,10 +81,12 @@ function ColorTest() {
     
     let [currentRadio] = useState(0);
     let [currentBrightness] = useState(100);
-    let [currentColorType] = useState("prot");
+    let [currentColorType] = useState("protan");
+    let [currentColorList] = useState([]);
     let [globalNumColors] = useState(1); // How many colors on motive and background(each)
     let [globalNumSpecialColors] = useState(1); // How many special colors
     let [numConfusionLines] = useState(4); // How many special colors
+
 
     let [noiseLevel] = useState(0.000);
     let [colRadius] = useState(0.02);
@@ -450,6 +454,7 @@ function ColorTest() {
 
     const recieveSrgbValue = (newSrgb) => {
 
+        currentColorList = newSrgb;
         //Set style color for circles
         for (let i = 0; i < globalNumColors * 2; i++) {
             //mix colors TODO
@@ -539,73 +544,116 @@ function ColorTest() {
     //Generate new figures from button push
     let placeCirclesButton = useRef(null);
 
+    //Too big for excel, need another method
+    //FigureB64: "data:image/svg+xml;base64," + window.btoa(svgCircles.current.innerHTML)},
+    //Data for excel sheet
+    const dataExcel = [];
 
     // ====== Figure size ====== //
     //Useffect needed as it tries accessing before DOM loads
     useEffect(() => {
         const handleKeyDown = (event) => {
-          const key = event.key;
-          //Ensure it is a-z or 0-9
-        //   if (/^[a-z0-9]$/.test(key)) {
-        //     placeCirclesButton.current.click();
-            
-        //     //If correct, new character, if incorrect, easier test
-        //     //Limit on > 3 due to figure turning worse after that value
-        //     if(motive.current.value === key || globalRadiusChange > 3 ){//|| globalBorder === true){
-        //         //Possible values for test
-        //         const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-        //         const randomIndex = Math.floor(Math.random() * chars.length);
-        //         //Pick random value for next test
-        //         motive.current.value = chars[randomIndex];
-        //         getTextMap(chars[randomIndex]);
-        //         // eslint-disable-next-line
-        //         globalRadiusChange = 0;
-        //         // globalBorder = false;
+            const key = event.key;
 
-        //         //If correct add to list
-        //         svgList.current.push(svgCircles.current.innerHTML);
-        //         //TODO: if failed and it reaches globalRadisuChange 4, make special case, we still want to see it in data
-        //     } else{
-        //         //If incorrect, increase figure size
-        //         globalRadiusChange++;
-        //         // globalBorder = true;
+            //Toggle "command central"
+            if (/^'$/.test(key)) {
+                wrapper.current.style.display = wrapper.current.style.display === "none" ? "block" : "none";
+            }
+            
+            //Prevent errors from starting too early
+            if(currentColorList.length === 0){
+                return;
+            }
                 
-        //     }
+          //Ensure it is a-z or 0-9
+          if (/^[a-z0-9]$/.test(key) && activeTest === "size") {
+            placeCirclesButton.current.click();
+            
+            //If correct, new character, if incorrect, easier test
+            //Limit on > 3 due to figure turning worse after that value
+            if(motive.current.value === key || globalRadiusChange > 3 ){//|| globalBorder === true){
+                //Possible values for test
+                const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+                const randomIndex = Math.floor(Math.random() * chars.length);
+                //Pick random value for next test
+                motive.current.value = chars[randomIndex];
+                getTextMap(chars[randomIndex]);
+                // eslint-disable-next-line
+                globalRadiusChange = 0;
+                // globalBorder = false;
+
+                //If correct add to list
+                svgList.current.push(svgCircles.current.innerHTML);
+                //TODO: if failed and it reaches globalRadisuChange 4, make special case, we still want to see it in data
+            } else{
+                //If incorrect, increase figure size
+                globalRadiusChange++;
+                // globalBorder = true;
+                
+            }
 
         //Parameters: size, border, brightness, color noise, figure type
+        
 
-
-            //Increase color noise
-            if (/^[a-z0-9]$/.test(key)) {
-                placeCirclesButton.current.click();
-                
-                //If correct, new character, if incorrect, easier test
-                //Limit on > 3 due to figure turning worse after that value
-                if(motive.current.value === key || noiseLevel > 0.01 ){//|| globalBorder === true){
-                    //Possible values for test
-                    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-                    const randomIndex = Math.floor(Math.random() * chars.length);
-                    //Pick random value for next test
-                    motive.current.value = chars[randomIndex];
-                    getTextMap(chars[randomIndex]);
-                    // eslint-disable-next-line
-                    noiseLevel = 0;
-                    showColorChoice();
-                    setColor();
-                    drawSVG();   
-
-
-
-    
-                    //If correct add to list
-                    svgList.current.push(svgCircles.current.innerHTML);
-                } else{
-                    //If incorrect, increase noise
-                    noiseLevel += 0.002; 
-                    showColorChoice();
-                    setColor();
-                    drawSVG();          
+        //Increase color noise
+        if (/^[a-z0-9]$/.test(key)) {
+            placeCirclesButton.current.click();
+            
+            let correctPress = false;
+            //If correct, new character, if incorrect, easier test
+            //Limit on > 3 due to figure turning worse after that value
+            if(motive.current.value === key || noiseLevel > 0.01 ){//|| globalBorder === true){
+                correctPress = true;
+                //If correct add to list
+                svgList.current.push(svgCircles.current.innerHTML);
+            } else{
+                //If incorrect, increase noise
+                // eslint-disable-next-line
+                noiseLevel += 0.002; 
+                showColorChoice();
+                setColor();
+                drawSVG();          
+            }
+            
+            //Generate list of colors in string format 
+            let listColorString = "";
+            for(let i = 0; i < globalNumColors*2; i++){
+                listColorString += currentColorList[i] 
+                if(i < globalNumColors*2-1){
+                    listColorString += ", "; 
                 }
+            }
+            //Add to excel file
+            dataExcel.push({ 
+                ID: 1,  
+                Motive: motive.current.value, 
+                UserKey: key, 
+                CorrectPress: correctPress ? "yes" : "no", 
+                NoiseLevel: noiseLevel,
+                CircleSize: globalRadiusChange,
+                Border: globalBorder ? "yes" : "no",
+                ColorDeficiency: currentColorType,
+                Brightness: currentBrightness, 
+                sRGB: listColorString,
+            });
+
+            //If correctly pressed, reset paramters and new motive
+            if(correctPress){
+                //Possible values for test
+                const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+                const randomIndex = Math.floor(Math.random() * chars.length);
+                //Pick random value for next test
+                motive.current.value = chars[randomIndex];
+                getTextMap(chars[randomIndex]);
+                noiseLevel = 0;
+                showColorChoice();
+                setColor();
+                drawSVG(); 
+
+                //Set a space in excel docuemnt between correct tries 
+                // dataExcel.push({ID:1})
+            }
+
 
           }
         };
@@ -618,18 +666,11 @@ function ColorTest() {
         };
       }, []);
 
-
     
     //Original file from previous project index.html
     
     return (
         <div>
-            <h1>Dynamic Ishihara Plates Project</h1>
-        {/* <button onClick={() => console.log(svgList.current.at(-1))}>Last one</button>
-        <button onClick={() => console.log(svgList.current)}>All</button> */}
-
-
-
         <div ref={svgDiv}></div>
 
         <div ref={loading}>
@@ -651,6 +692,7 @@ function ColorTest() {
                 </svg>
             </div>
             <div ref={wrapper}>
+                <ExcelExport data={dataExcel} fileName="UserData" />
                 <div ref={controls}>
                     <fieldset style={{width: "20%", float: "left"}}>
                         <legend>Controls</legend>
@@ -762,18 +804,6 @@ function ColorTest() {
                         <input type="number" defaultValue="1" min="1" max="9"  maxLength="1"
                             onInput={(e) => {
                                 let value = e.target.value;
-
-                                if (Number(value) < 1) {
-                                value = 1;
-                                } else if (Number(value) > 9) {
-                                value = 9;
-                                }
-
-                                if (Number(value) === 0 && value.length) {
-                                value = 1; 
-                                }
-
-                                value = value.slice(0, e.target.maxLength);
 
                                 globalNumColors = Number(value); 
                                 showColorChoice();
