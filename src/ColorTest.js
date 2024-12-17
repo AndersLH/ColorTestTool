@@ -479,6 +479,7 @@ function ColorTest() {
     //Increase noise level of color on confusion line
     //Change background color/contrast - related to size?
     //Geometric shapes - related to size?
+    //Include a timer, more time spent = more difficulty seeing it
 
     //Color image on background
 
