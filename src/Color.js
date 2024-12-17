@@ -2,7 +2,7 @@ import './Color.css';
 import React, { useState, useRef, useEffect } from 'react';
 import chromaticityImage from "./chrom_imp.png";
 
-//xxY to sRGB code from matlab, converted to Javascript with ChatGPT. Some minor adjustments has been made to fit my code. 
+//xxY to sRGB code from matlab code, converted to Javascript with https://www.codeconvert.ai/matlab-to-javascript-converter. Some minor adjustments has been made to fit my code. 
 //Calculate XYZ from xyY 
 function xyy2xyz(x, y, Y) {
   const X = (x * Y) / y;
@@ -11,6 +11,7 @@ function xyy2xyz(x, y, Y) {
 }
 
 //Calculate sRGB values from XYZ, AI translated from Matlab
+//AI translated from Matlab code
 function xyz2srgb(XYZ) {
   const M = [
     [3.2410, -1.5374, -0.4986],
@@ -19,7 +20,6 @@ function xyz2srgb(XYZ) {
   ];
 
   //Apply transformation
-  //AI translated from Matlab
   const sRGB = M.map(row =>
     row.reduce((sum, value, i) => sum + value * (XYZ[i] / 100), 0)
   );
@@ -350,7 +350,7 @@ function Color({  srgbValue,
                 <tr>
                   {
                 Array.from(
-                  //Length NUMBER HAS TO BE RETRIEVED FORM GLOBAL COLORS PARENT
+                  //Length
                   { length: numConfusionLines+1 },
                     (_, j) => i === 0 && j === 0 ? (
                       <th key={j + "dot"}></th>
