@@ -3,6 +3,10 @@
 ## Method for Testing People’s Color Vision
 
 
+### `npm install xlsx file-saver` 
+
+Must be installed for compatibility for exporting to Excel sheets
+
 ### `npm start`
 
 Runs the app in the development mode.\
@@ -22,6 +26,3 @@ Your app is ready to be deployed!
 
 
 
-### `npm install xlsx file-saver` 
-
-Must be installed for compatibility for exporting to Excel sheets
