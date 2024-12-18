@@ -1,0 +1,56 @@
+#plate {
+    image-rendering: pixelated;
+    border-radius: 100%;
+}
+
+#motive {
+    position: relative;
+    width: 20px;
+}
+
+#motiveImage {
+    width: 150px;
+    border: solid black 0px;
+    padding: 1px;
+}
+
+#controls {
+    padding: 4px;
+    width: 20%;
+    float: left;
+}
+
+#numOfCircles {
+    width: 5ch;
+}
+
+#disBtwCircles {
+    width: 4ch;
+}
+
+#numOfColors {
+    width: 4ch;
+}
+
+#numOfCircles {
+    width: 8ch;
+}
+
+
+#colors {
+    padding: 4px;
+    width: 30%;
+    float: left;
+}
+
+#wrapper {
+
+}
+
+#app {
+    display: none;
+}
+
+body {
+    margin: 20px;
+}
