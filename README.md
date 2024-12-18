@@ -25,5 +25,5 @@ The build is minified and the filenames include the hashes.\
 Your app is ready to be deployed!
 
 
-This project is based on an existing project, located in the `Original_ishihara_by_Karl_Andreas`
+This project is based on an existing project, located in the folder `Original_ishihara_by_Karl_Andreas`
 
