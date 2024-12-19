@@ -2,10 +2,13 @@
 
 ## Method for Testing People’s Color Vision
 
+### Install Node.js and npm
 
-### `npm install xlsx file-saver` 
+Download Node.js and npm from nodejs.org, then navigate to the project folder
 
-Must be installed for compatibility for exporting to Excel sheets
+### `npm -i`
+
+Install necessary packages
 
 ### `npm start`
 
@@ -25,4 +28,5 @@ The build is minified and the filenames include the hashes.\
 Your app is ready to be deployed!
 
 
+This project is based on an existing project, located in the folder `Original_ishihara_by_Karl_Andreas`
 
