@@ -210,7 +210,7 @@ function Color({  srgbValue,
     
     //If border of line is hit, loop back around and lower radius to prevent infinite loop 
     if(t > 1 && loop){
-      dot = interpolate(x1, y1, x2, y2, 0, i, j, true, radius-0.002);
+      dot = interpolate(x1, y1, x2, y2, 0, i, j, true, radius-0.002, noise);
       return dot;
     }    
 
@@ -218,7 +218,7 @@ function Color({  srgbValue,
     //If out of boundary, use recursion until it is
     if(!isPointInTriangle(x,y)){
       t += 0.07;
-      dot = interpolate(x1, y1, x2, y2, t, i, j, true, radius);
+      dot = interpolate(x1, y1, x2, y2, t, i, j, true, radius, noise);
       if(loop){
         return dot;
       }
@@ -230,7 +230,7 @@ function Color({  srgbValue,
       if(Math.sqrt((dot.x - listConfusionDots.current[i][a][0].x) ** 2 + (dot.y - listConfusionDots.current[i][a][0].y) ** 2) <= radius 
         || Math.sqrt((dot.x - whitePoint.x) ** 2 + (dot.y - whitePoint.y) ** 2) <= 0.05){
         t += 0.003;
-        dot = interpolate(x1, y1, x2, y2, t, i, j, true, radius);
+        dot = interpolate(x1, y1, x2, y2, t, i, j, true, radius, noise);
         if(loop){
           return dot;
         }
@@ -545,7 +545,7 @@ function Color({  srgbValue,
             }
           )
         }
-
+ 
 
         {/* x-axis */}
         <text style={{fontSize: "19", textAnchor: "middle"}} x="50%" y="98%">x</text>
