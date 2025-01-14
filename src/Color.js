@@ -195,81 +195,79 @@ function Color({  srgbValue,
   //Save confusion dots in arrays within array for preventing collisions 
   function addConfusionDots(dot, i, j){
     listConfusionDots.current[i][j] = [];
-    // listConfusionDots.current[i][j].push(dot);
     listConfusionDots.current[i][j][0] = dot;
   }
 
 
-  //Interpolate and find a point t on line from x1,y1 to x2,y2 
-  function interpolate(x1, y1, x2, y2, t, i, j, loop, radius, noise) {
 
+
+  //---------------------------------
+  //Interpolate calculation
+  function mathInter(x1, y1, x2, y2, t, j){
     //Interpolate functions
+    // if(j % 2 === 1){
+    //   t = 1 - t;
+    // }
+    if(globalNumColors/2 > j){
+      t = 1-t;
+    }
+
     const x = x1 + t * (x2 - x1);
     const y = y1 + t * (y2 - y1);
-    let dot = {x: x,y: y};
-    
-    //If border of line is hit, loop back around and lower radius to prevent infinite loop 
-    if(t > 1 && loop){
-      dot = interpolate(x1, y1, x2, y2, 0, i, j, true, radius-0.002, noise);
-      return dot;
-    }    
+    return {x:x, y:y};
+  }
 
+  //Interpolate and find a point t on line from x1,y1 to x2,y2 
+  function interpolate(x1, y1, x2, y2, t, i, j, radius, noise) {
+
+    //Interpolate functions
+    let dot = mathInter(x1, y1, x2, y2, t, j);
 
     //If out of boundary, use recursion until it is
-    if(!isPointInTriangle(x,y)){
-      t += 0.07;
-      dot = interpolate(x1, y1, x2, y2, t, i, j, true, radius, noise);
-      if(loop){
-        return dot;
-      }
+    while(!isPointInTriangle(dot.x,dot.y)|| t > 1){
+      t += 0.02;
+      dot = mathInter(x1,y1,x2,y2,t, j);
     }
   
-    
-    //Check if current dot is too close to another dot
+    //Check if current dot is too close to another dot or too close to the whitepoint
     for(let a = 0; a < j; a++){
-      if(Math.sqrt((dot.x - listConfusionDots.current[i][a][0].x) ** 2 + (dot.y - listConfusionDots.current[i][a][0].y) ** 2) <= radius 
-        || Math.sqrt((dot.x - whitePoint.x) ** 2 + (dot.y - whitePoint.y) ** 2) <= 0.05){
+      while(Math.sqrt((dot.x - listConfusionDots.current[i][a][0].x) ** 2 + (dot.y - listConfusionDots.current[i][a][0].y) ** 2) <= radius 
+        || Math.sqrt((dot.x - whitePoint.x) ** 2 + (dot.y - whitePoint.y) ** 2) <= 0.05 || t > 1){
         t += 0.003;
-        dot = interpolate(x1, y1, x2, y2, t, i, j, true, radius, noise);
-        if(loop){
-          return dot;
-        }
+        dot = mathInter(x1,y1,x2,y2,t, j);
       }
-      
     }
+    
 
+    //Random angle in any direction
+    // const angle = Math.random() * 2 * Math.PI; 
 
-    //Only save dot on a non-recursion dot
-    if(!loop){
+    //Calculate the distance moving away from the confusion line as "noise"
+    //Calculated angle perpindicular to line
+    const dirX = x2 - x1;
+    const dirY = y2 - y1;
 
-      //Random angle in any direction
-      // const angle = Math.random() * 2 * Math.PI; 
+    //Normalize the direction vector
+    const length = Math.sqrt(dirX * dirX + dirY * dirY);
+    const unitDirX = dirX / length;
+    const unitDirY = dirY / length;
 
-      //Calculated angle perpindicular to line
-      const dirX = x2 - x1;
-      const dirY = y2 - y1;
+    //Calculate perpendicular vectors, alternating sides
+    const perpX = j % 2 === 0 ? -unitDirY : unitDirY;
+    const perpY = j % 2 === 0 ? unitDirX : -unitDirX;
 
-      //Normalize the direction vector
-      const length = Math.sqrt(dirX * dirX + dirY * dirY);
-      const unitDirX = dirX / length;
-      const unitDirY = dirY / length;
+    //Calculate angle of the perpendicular vector
+    const angle = Math.atan2(perpY, perpX);
 
-      //Calculate perpendicular vectors, alternating sides
-      const perpX = j % 2 === 0 ? -unitDirY : unitDirY;
-      const perpY = j % 2 === 0 ? unitDirX : -unitDirX;
+    //Add a skew to prevent perfect perpindicularity which just creates another confusion line
+    const skew = (i * 0.1 - j * 0.2);
 
-      //Calculate angle of the perpendicular vector
-      const angle = Math.atan2(perpY, perpX);
+    //Add how far the dot will move out based on noise with the angle + skew
+    dot.x += noise * Math.cos(angle + skew);
+    dot.y += noise * Math.sin(angle + skew);
 
-      //Add a skew to prevent perfect perpindicularity which just creates another confusion line
-      const skew = (i * 0.1 - j * 0.2);
-
-      //Add how far the dot will move out based on noise with the angle + skew
-      dot.x += noise * Math.cos(angle + skew);
-      dot.y += noise * Math.sin(angle + skew);
-
-      addConfusionDots(dot, i, j);
-    }
+    addConfusionDots(dot, i, j);
+  
     return dot;
   }
 
@@ -280,10 +278,10 @@ function Color({  srgbValue,
     //Calculate the dots based on their respective confusion lines and interpolate
     let dot;
     let tValue = 0.1; //Math.random();
-    if(xCoor){ //Checks if x2 and y2 coordinates need to be swapped depending on the confusion line, tritan differs from deutan and protan
-      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,tValue, i, j, false, colRadius, noiseLevel);
+    if(xCoor){ //Checks if x2,y2 coordinates need to be swapped depending on the confusion line, tritan differs from deutan and protan
+      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,tValue, i, j, colRadius, noiseLevel);
     } else {
-      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),tValue, i, j, false, colRadius, noiseLevel);
+      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),tValue, i, j, colRadius, noiseLevel);
     }
 
     
