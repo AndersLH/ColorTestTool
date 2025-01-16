@@ -46,10 +46,7 @@ function xyy2srgb(x, y, Y) {
 //List of confusion lines to perserve lines on DOM update
 let cfList = [];
 
-// let noiseLevel = 0.02;
-// let colRadius = 0.15;
-// let tValue = 0.1;//Math.random();
-// let currentRadio = 0;
+
 function Color({  srgbValue, 
                   recieveRadioVal, 
                   recieveBrightnessVal, 
@@ -64,7 +61,7 @@ function Color({  srgbValue,
 
                     
   //Click coordinates
-  // const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
+  const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
   //Slider for brightness setting
   const [sliderBright, setSliderBright] = useState(currentBrightness);
   let [listColors,setListColors] = useState(currentColorType);
@@ -112,33 +109,33 @@ function Color({  srgbValue,
   }
 
   // //SRGB functino based on cursor click, old implementation for early testing
-  // function calcSRGBClick(){
-  //   return xyy2srgb((clickPosition.x / 100), (1-(clickPosition.y / 100)), sliderBright);
-  // }
+  function calcSRGBClick(){
+    return xyy2srgb((clickPosition.x / 100), (1-(clickPosition.y / 100)), sliderBright);
+  }
 
   //Ref initialization
-  // const colorBox = useRef(null);
+  const colorBox = useRef(null);
 
   //Click event
-  // const clickSVG = (event) => {
-  //   const svg = event.currentTarget;
-  //   const rect = svg.getBoundingClientRect();
+  const clickSVG = (event) => {
+    const svg = event.currentTarget;
+    const rect = svg.getBoundingClientRect();
 
-  //   //Calculate the actual position within the SVG
-  //   const x = ((event.clientX - rect.left) / rect.width);
-  //   const y = ((event.clientY - rect.top) / rect.height);
+    //Calculate the actual position within the SVG
+    const x = ((event.clientX - rect.left) / rect.width);
+    const y = ((event.clientY - rect.top) / rect.height);
 
-  //   //Limit click coordinates to be within the grid (10% to 90%)
-  //   const gridX = Math.max(0, Math.min((x - 0.1) / 0.8, 1)) * 100;
-  //   const gridY = Math.max(0, Math.min((y - 0.1) / 0.8, 1)) * 100;
+    //Limit click coordinates to be within the grid (10% to 90%)
+    const gridX = Math.max(0, Math.min((x - 0.1) / 0.8, 1)) * 100;
+    const gridY = Math.max(0, Math.min((y - 0.1) / 0.8, 1)) * 100;
     
-  //   setClickPosition({ x: gridX, y: gridY });
+    setClickPosition({ x: gridX, y: gridY });
     
-  //   //Pass sRGB values to parent manually, due to delayed useState update
-  //   // srgbValue(xyy2srgb((gridX / 100).toFixed(3), (1-(gridY / 100)).toFixed(3), sliderBright)); 
-  //   srgbValue(listConfusionColors.current);
+    //Pass sRGB values to parent manually, due to delayed useState update
+    // srgbValue(xyy2srgb((gridX / 100).toFixed(3), (1-(gridY / 100)).toFixed(3), sliderBright)); 
+    srgbValue(listConfusionColors.current);
 
-  // };
+  };
 
 
   function isPointInTriangle(x, y) {
@@ -409,8 +406,10 @@ function Color({  srgbValue,
         {sliderBright}
       </label>
       </div> 
+      <div ref={colorBox} style={{width: "200px", height:"200px", backgroundColor:"rgb("+calcSRGBClick()[0]+", "+ calcSRGBClick()[1] + ", " + calcSRGBClick()[2]+")"}}></div>
+
     <div style={{height: "600px", width: "600px"}} >
-      <svg style={{height:"75%", width: "75%"}} >
+      <svg style={{height:"75%", width: "75%"}} onClick={clickSVG}>
 
         {/* Chromaticity diagram */}
         <image href={chromaticityImage} x={"5%"} y={"7.5%"} style={{filter: `brightness(${sliderBright}%)`}} width="86.7%" />
@@ -581,7 +580,7 @@ function Color({  srgbValue,
 
 
         {/* Click for coordinates in grid */}
-        {/* {clickPosition && (
+        {clickPosition && (
           <text style={{fontSize: "20", textAnchor: "middle", cursor: "default"}}
           x={`${10 + clickPosition.x * 0.8}%`}
           y={`${11.7 + clickPosition.y * 0.8}%`}
@@ -590,11 +589,11 @@ function Color({  srgbValue,
           y: {(1-(clickPosition.y / 100)).toFixed(3)}, 
           sRGB: {calcSRGBClick()[0]+", "+ calcSRGBClick()[1] + ", " + calcSRGBClick()[2]}
         </text>
-        )} */}
+        )}
 
 
         {/* White point D65 Wikipedia, find good paper instead */}
-        {/* <circle style={{stroke:'grey', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * whitePoint.x) * 0.8}%`} cy={`${10 + (100 - (100 * whitePoint.y)) * 0.8}%`} /> */}
+        <circle style={{stroke:'grey', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * whitePoint.x) * 0.8}%`} cy={`${10 + (100 - (100 * whitePoint.y)) * 0.8}%`} />
 
 
         {/* Possibly inaccurate sRGB triangle, find good source */}
