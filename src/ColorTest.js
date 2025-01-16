@@ -668,7 +668,7 @@ function ColorTest() {
             <h1 style={{ textAlign: "center" }}>Loading...</h1>
         </div>
         <div ref={app} onClick={() => { globalDraw.current = true; }}>
-            <div ref={svgCircles}>
+            <div ref={svgCircles} className="plateDiv">
                 <svg xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" width="4in" height="4in" version="1.1"
                     style={{
                         shapeRendering: "geometricPrecision",
@@ -820,7 +820,7 @@ function ColorTest() {
 
                                 e.target.value = value;
                             }}/>
-
+                        <br></br>
                         <label> How many confusion lines? </label>
                         <input type="number" defaultValue="4" min="1" max="9" maxLength="1"
                             onInput={(e) => {

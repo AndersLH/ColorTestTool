@@ -2,10 +2,18 @@ table, th, td {
     border:1px solid black;
   }
 
+  body{
+    background-color: grey;
+  }
   .fillColorsClass{
     display:none;
   }
 
   #fil0{
     display:block;
+  }
+
+  .plateDiv{
+    text-align: center;
+    margin-top: 50px;
   }
