@@ -1,16 +1,41 @@
 import './Color.css';
 import React, { useState, useRef, useEffect } from 'react';
-import chromaticityImage from "./chrom_imp.png";
+import chromaticityImage from "./CIE_1976_UCS.png";
 
 //xxY to sRGB code from matlab code, converted to Javascript with https://www.codeconvert.ai/matlab-to-javascript-converter. Some minor adjustments has been made to fit my code. 
 //Calculate XYZ from xyY 
 function xyy2xyz(x, y, Y) {
+  //After using CIE 1976, the new coordinates must be converted back to 1931 before proceeding
+  let con = uv2xy(x,y);
+  x = con.x;
+  y = con.y;
+
   const X = (x * Y) / y;
   const Z = (Y * (1.0 - x - y)) / y;
   return [X, Y, Z];
 }
 
-//Calculate sRGB values from XYZ, AI translated from Matlab
+//Convert from uv 1976 CIE to xy 1931 CIE
+function uv2xy(up,vp){
+  const u = (9 * up) / (6 * up - 16 * vp + 12);
+  const p = (4 * vp) / (6 * up - 16 * vp + 12);
+  return {x:u,y:p};
+}
+
+//Convert xy 1931 CIE to uv 1976 CIE
+function xy2uv(x, y) {
+  //Prevent division by zero 
+  if (x + y === 0) {
+    return { u: 0, v: 0 };
+  }
+  
+  const u = (4 * x) / (-2 * x + 12 * y + 3);
+  const v = (9 * y) / (-2 * x + 12 * y + 3);
+
+  return {u:u, v:v};
+}
+
+//Calculate sRGB values from XYZ
 //AI translated from Matlab code
 function xyz2srgb(XYZ) {
   const M = [
@@ -43,6 +68,49 @@ function xyy2srgb(x, y, Y) {
   return xyz2srgb(XYZ);
 }
 
+
+
+
+
+
+
+//Convert xyz back to uvp for checking if conversations are correct
+//AI converted code from Matlab
+// function xyz2uvp(XYZ) {
+//   const [X, Y, Z] = XYZ;
+
+//   const denominator = X + 15 * Y + 3 * Z;
+
+//   if (denominator === 0) {
+//       return [0, 0]; // Default to (0, 0) if the input leads to an undefined chromaticity
+//   }
+
+//   // Calculate u' and v' chromaticity coordinates
+//   const up = (4 * X) / denominator;
+//   const vp = (9 * Y) / denominator;
+
+//   return [up, vp];
+// }
+
+// // Example usage:
+
+// let up = 0.24;
+// let vp = 0.5;
+
+
+
+
+
+
+// const XYZ = xyy2xyz(newx,newy,100); // Replace with your input XYZ values
+// const colorOm = xyy2srgb(newx,newy,100);
+// const uvp = xyz2uvp(XYZ);
+
+// console.log(XYZ);
+// console.log("u':", uvp[0], "v':", uvp[1]);
+// console.log(colorOm);
+
+
 //List of confusion lines to perserve lines on DOM update
 let cfList = [];
 
@@ -68,20 +136,43 @@ function Color({  srgbValue,
 
 
   //Coordinates for white point D65
-  let whitePoint = {x: 0.31272, y: 0.32903};
+  const whitePoint1931 = {x: 0.31272, y: 0.32903};
+  const newW = xy2uv(whitePoint1931.x,whitePoint1931.y);
+  const whitePoint1976 = {x:newW.u, y:newW.v};
 
   //Coordinates for creating sRGB triangle
-  let sRGBTriangle = {a: {x: 0.64, y: 0.33}, b: {x: 0.30, y: 0.60}, c: {x: 0.15, y: 0.06}}
+  const sRGBTriangle1931 = {
+    a: {x: 0.64, y: 0.33}, 
+    b: {x: 0.30, y: 0.60}, 
+    c: {x: 0.15, y: 0.06}
+  }
+  
+  //Convert coordinates from 1931 triangle to 1976 triangle
+  const newA = xy2uv(sRGBTriangle1931.a.x,sRGBTriangle1931.a.y);
+  const newB = xy2uv(sRGBTriangle1931.b.x,sRGBTriangle1931.b.y);
+  const newC = xy2uv(sRGBTriangle1931.c.x,sRGBTriangle1931.c.y);
+
+  const sRGBTriangle1976 = {
+    a: {x: newA.u, y: newA.v},
+    b: {x: newB.u, y: newB.v},
+    c: {x: newC.u, y: newC.v}}
 
 
   //Confusion line values 
   //x1 and y1 from color science papers as the copunctual point where the confusion lines start, 
-  //x2 and y2 are points to actually create a line from the confusion line point, manually found and tested to stay within borders
-  //stat are the x or y coordinates the lines will stop at, they remain static
-  const protan = {x1: 0.7455, y1: 0.2565, x2: 0.14, y2: 0.67, stat:0.1}; 
-  const deutan = {x1: 1.4, y1: -0.4, x2: 0.3, y2: 0.74, stat:0.1}; 
-  const tritan = {x1: 0.17045, y1: 0, x2: 0.35, y2: 0.95, stat:0.7};
+  //yMin and yMax are points to actually create a line from the confusion line point, manually found and tested to stay within borders
+  // 'xyStop' are the x or y coordinates the lines will stop at, they remain static
+  const protan1931 = {x1: 0.7455, y1: 0.2565};// x2: 0.14, y2: 0.67, stat:0.1}; 
+  const deutan1931 = {x1: 1.4, y1: -0.4}; // x2: 0.3, y2: 0.74, stat:0.1}; 
+  const tritan1931 = {x1: 0.17045, y1: 0}; // x2: 0.35, y2: 0.95, stat:0.7};
 
+  const newPro = xy2uv(protan1931.x1,protan1931.y1);
+  const newDeu = xy2uv(deutan1931.x1,deutan1931.y1);
+  const newTri = xy2uv(tritan1931.x1,tritan1931.y1);
+
+  const protan = {x1: newPro.u, y1: newPro.v, yMin: 0.15, yMax: 0.53, xyStop:0.05}; 
+  const deutan = {x1: newDeu.u, y1: newDeu.v, yMin: 0.15, yMax: 0.46, xyStop:0.6}; 
+  const tritan = {x1: newTri.u, y1: newTri.v, yMin: 0.1, yMax: 0.40, xyStop:0.6};
 
   //Temporary store lines and wait for refresh button generate new ones
   let [generateNewCF, setGenerateNewCF] = useState(true);
@@ -145,14 +236,14 @@ function Color({  srgbValue,
     }
   
     // Total area of the triangle
-    const totalArea = triangleArea(sRGBTriangle.a.x, sRGBTriangle.a.y, 
-                                   sRGBTriangle.b.x, sRGBTriangle.b.y, 
-                                   sRGBTriangle.c.x, sRGBTriangle.c.y);
+    const totalArea = triangleArea(sRGBTriangle1976.a.x, sRGBTriangle1976.a.y, 
+                                   sRGBTriangle1976.b.x, sRGBTriangle1976.b.y, 
+                                   sRGBTriangle1976.c.x, sRGBTriangle1976.c.y);
   
     //Calculate sub-triangle areas
-    const area1 = triangleArea(x, y, sRGBTriangle.b.x, sRGBTriangle.b.y, sRGBTriangle.c.x, sRGBTriangle.c.y);
-    const area2 = triangleArea(sRGBTriangle.a.x, sRGBTriangle.a.y, x, y, sRGBTriangle.c.x, sRGBTriangle.c.y);
-    const area3 = triangleArea(sRGBTriangle.a.x, sRGBTriangle.a.y, sRGBTriangle.b.x, sRGBTriangle.b.y, x, y);
+    const area1 = triangleArea(x, y, sRGBTriangle1976.b.x, sRGBTriangle1976.b.y, sRGBTriangle1976.c.x, sRGBTriangle1976.c.y);
+    const area2 = triangleArea(sRGBTriangle1976.a.x, sRGBTriangle1976.a.y, x, y, sRGBTriangle1976.c.x, sRGBTriangle1976.c.y);
+    const area3 = triangleArea(sRGBTriangle1976.a.x, sRGBTriangle1976.a.y, sRGBTriangle1976.b.x, sRGBTriangle1976.b.y, x, y);
   
     //Check if the sum of the sub-triangle areas equals the total area
     return Math.abs(totalArea - (area1 + area2 + area3)) < 1e-9; // Allow for floating-point precision errors
@@ -221,17 +312,29 @@ function Color({  srgbValue,
     let dot = mathInter(x1, y1, x2, y2, t, j);
 
     //If out of boundary, use recursion until it is
-    while(!isPointInTriangle(dot.x,dot.y)|| t > 1){
+    while(!isPointInTriangle(dot.x,dot.y)){
       t += 0.02;
       dot = mathInter(x1,y1,x2,y2,t, j);
+
+      //Prevent infinite loop
+      //TODO: replace in while loop with && t < 1
+      if(t>1){
+        break;
+      }
     }
   
     //Check if current dot is too close to another dot or too close to the whitepoint
     for(let a = 0; a < j; a++){
       while(Math.sqrt((dot.x - listConfusionDots.current[i][a][0].x) ** 2 + (dot.y - listConfusionDots.current[i][a][0].y) ** 2) <= radius 
-        || Math.sqrt((dot.x - whitePoint.x) ** 2 + (dot.y - whitePoint.y) ** 2) <= 0.05 || t > 1){
+        || Math.sqrt((dot.x - whitePoint1976.x) ** 2 + (dot.y - whitePoint1976.y) ** 2) <= 0.03){
         t += 0.003;
         dot = mathInter(x1,y1,x2,y2,t, j);
+
+      //Prevent infinite loop
+      if(t>1){
+        break;
+      }
+
       }
     }
     
@@ -310,9 +413,10 @@ function Color({  srgbValue,
     setDecoyState(true);
   }, [listColors]);
 
+
   return (
     <div>
-      <div style={{float:"right"}}>
+      <div style={{float:"left"}}>
         <h3>Type of color confusion lines:</h3>
 
         {/* Dropdown list with color types */}
@@ -406,13 +510,12 @@ function Color({  srgbValue,
         {sliderBright}
       </label>
       </div> 
-      <div ref={colorBox} style={{width: "200px", height:"200px", backgroundColor:"rgb("+calcSRGBClick()[0]+", "+ calcSRGBClick()[1] + ", " + calcSRGBClick()[2]+")"}}></div>
 
-    <div style={{height: "600px", width: "600px"}} >
-      <svg style={{height:"75%", width: "75%"}} onClick={clickSVG}>
+    <div style={{height: "800px", width: "800px"}} >
+      <svg style={{height:"70%", width: "70%"}} onClick={clickSVG}>
 
         {/* Chromaticity diagram */}
-        <image href={chromaticityImage} x={"5%"} y={"7.5%"} style={{filter: `brightness(${sliderBright}%)`}} width="86.7%" />
+        <image href={chromaticityImage} x={"7.3%"} y={"39.3%"} style={{filter: `brightness(${sliderBright}%)`}} width="53.4%" />
 
         {/* Dynamic creation of confusion lines */}
         {/* Protan */}
@@ -429,15 +532,15 @@ function Color({  srgbValue,
                       id={i+"-line"}
                       x1={`${10 + (100 * protan.x1) * 0.8}%`} 
                       y1={`${10 + (100 - (100 * protan.y1)) * 0.8}%`} 
-                      x2={`${10 + (100 * protan.stat) * 0.8}%`} 
-                      y2={`${10 + (100 - (100 * calcConfusionLine(i,protan.x2,protan.y2))) * 0.8}%`} //0.14 and 0.67 values found manually through testing
+                      x2={`${10 + (100 * protan.xyStop) * 0.8}%`} 
+                      y2={`${10 + (100 - (100 * calcConfusionLine(i,protan.yMin,protan.yMax))) * 0.8}%`} //0.14 and 0.67 values found manually through testing
                       /> 
                       {
                       Array.from(
                       { length: globalNumColors },
                         (_, j) => {
                           //Calculate confusion dot
-                          const calcDot = calcConfusionDot(protan.x1, protan.y1, protan.x2, protan.y2, protan.stat, false, i,j);
+                          const calcDot = calcConfusionDot(protan.x1, protan.y1, protan.yMin, protan.yMax, protan.xyStop, false, i,j);
                           return(
                             // Confusion dots
                             <circle key={j+"dot-"+i+"t"} 
@@ -472,15 +575,15 @@ function Color({  srgbValue,
                       id={i+"-line"}
                       x1={`${10 + (100 * deutan.x1) * 0.8}%`} 
                       y1={`${10 + (100 - (100 * deutan.y1)) * 0.8}%`} 
-                      x2={`${10 + (100 * deutan.stat) * 0.8}%`} 
-                      y2={`${10 + (100 - (100 * calcConfusionLine(i,deutan.x2,deutan.y2))) * 0.8}%`} 
+                      x2={`${10 + (100 * deutan.xyStop) * 0.8}%`} 
+                      y2={`${10 + (100 - (100 * calcConfusionLine(i,deutan.yMin,deutan.yMax))) * 0.8}%`} 
                       /> 
                       {
                       Array.from(
                         { length: globalNumColors },
                           (_, j) => {
                             //Calculate confusion dot
-                            const calcDot = calcConfusionDot(deutan.x1, deutan.y1, deutan.x2, deutan.y2, deutan.stat, false, i,j);
+                            const calcDot = calcConfusionDot(deutan.x1, deutan.y1, deutan.yMin, deutan.yMax, deutan.xyStop, false, i,j);
                             return(
                               // Confusion dots
                               <circle key={j+"dot-"+i+"t"} 
@@ -515,14 +618,14 @@ function Color({  srgbValue,
                       id={i+"-line"}
                       x1={`${10 + (100 * tritan.x1) * 0.8}%`} 
                       y1={`${10 + (100 - (100 * tritan.y1)) * 0.8}%`} 
-                      x2={`${10 + (100 * calcConfusionLine(i,tritan.x2,tritan.y2)) * 0.8}%`}
-                      y2={`${10 + (100 - (100 * tritan.stat)) * 0.8}%`} />
+                      x2={`${10 + (100 * calcConfusionLine(i,tritan.yMin,tritan.yMax)) * 0.8}%`}
+                      y2={`${10 + (100 - (100 * tritan.xyStop)) * 0.8}%`} />
                     {
                     Array.from(
                       { length: globalNumColors },
                         (_, j) => {
                           //Calculate confusion dot
-                          const calcDot = calcConfusionDot(tritan.x1, tritan.y1, tritan.x2, tritan.y2, tritan.stat, true, i,j);
+                          const calcDot = calcConfusionDot(tritan.x1, tritan.y1, tritan.yMin, tritan.yMax, tritan.xyStop, true, i,j);
                           return(
                             // Confusion dots
                             <circle key={j+"dot-"+i+"t"} 
@@ -592,17 +695,28 @@ function Color({  srgbValue,
         )}
 
 
-        {/* White point D65 Wikipedia, find good paper instead */}
-        <circle style={{stroke:'grey', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * whitePoint.x) * 0.8}%`} cy={`${10 + (100 - (100 * whitePoint.y)) * 0.8}%`} />
+        {/* White point D65 Wikipedia, find good paper instead  */}
+        <circle style={{stroke:'grey', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * whitePoint1976.x) * 0.8}%`} cy={`${10 + (100 - (100 * whitePoint1976.y)) * 0.8}%`} />
+       
 
 
         {/* Possibly inaccurate sRGB triangle, find good source */}
-        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * sRGBTriangle.a.x) * 0.8}%`} y1={`${10 + (100 - (100 * sRGBTriangle.a.y)) * 0.8}%`} x2={`${10 + (100 * sRGBTriangle.b.x) * 0.8}%`} y2={`${10 + (100 - (100 * sRGBTriangle.b.y)) * 0.8}%`} />
-        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * sRGBTriangle.b.x) * 0.8}%`} y1={`${10 + (100 - (100 * sRGBTriangle.b.y)) * 0.8}%`} x2={`${10 + (100 * sRGBTriangle.c.x) * 0.8}%`} y2={`${10 + (100 - (100 * sRGBTriangle.c.y)) * 0.8}%`} />
-        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * sRGBTriangle.c.x) * 0.8}%`} y1={`${10 + (100 - (100 * sRGBTriangle.c.y)) * 0.8}%`} x2={`${10 + (100 * sRGBTriangle.a.x) * 0.8}%`} y2={`${10 + (100 - (100 * sRGBTriangle.a.y)) * 0.8}%`} />
+        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * sRGBTriangle1976.a.x) * 0.8}%`} y1={`${10 + (100 - (100 * sRGBTriangle1976.a.y)) * 0.8}%`} x2={`${10 + (100 * sRGBTriangle1976.b.x) * 0.8}%`} y2={`${10 + (100 - (100 * sRGBTriangle1976.b.y)) * 0.8}%`} />
+        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * sRGBTriangle1976.b.x) * 0.8}%`} y1={`${10 + (100 - (100 * sRGBTriangle1976.b.y)) * 0.8}%`} x2={`${10 + (100 * sRGBTriangle1976.c.x) * 0.8}%`} y2={`${10 + (100 - (100 * sRGBTriangle1976.c.y)) * 0.8}%`} />
+        <line style={{stroke:'black', strokeWidth:'2'}} x1={`${10 + (100 * sRGBTriangle1976.c.x) * 0.8}%`} y1={`${10 + (100 - (100 * sRGBTriangle1976.c.y)) * 0.8}%`} x2={`${10 + (100 * sRGBTriangle1976.a.x) * 0.8}%`} y2={`${10 + (100 - (100 * sRGBTriangle1976.a.y)) * 0.8}%`} />
 
       </svg>
     </div>
+          {/* Color box for calibrating screen color */}
+          <div ref={colorBox} style={{width: "300px", height:"300px", backgroundColor:"rgb("+calcSRGBClick()[0]+", "+ calcSRGBClick()[1] + ", " + calcSRGBClick()[2]+")"}}></div>
+      <text style={{fontSize: "20", textAnchor: "middle", cursor: "default"}}
+          x={`${10 + clickPosition.x * 0.8}%`}
+          y={`${11.7 + clickPosition.y * 0.8}%`}
+        >
+          x: {(clickPosition.x / 100).toFixed(3)}, 
+          y: {(1-(clickPosition.y / 100)).toFixed(3)}, 
+          sRGB: {calcSRGBClick()[0]+", "+ calcSRGBClick()[1] + ", " + calcSRGBClick()[2]}
+        </text>
     </div>
 
   );

@@ -16,6 +16,7 @@ function ColorTest() {
     let svgFillColors = useRef();
     let SVG_output_figures = useRef();
     let wrapper = useRef();
+    let startPage = useRef();
     let controls = useRef();
     let motive = useRef();
     let motiveImage = useRef();
@@ -104,7 +105,6 @@ function ColorTest() {
     //Original file from previous project: core.js
     
     function init() {
-
         setInterval(loop, 1000 / 60);
         placeCircles();
         getTextMap("");
@@ -118,9 +118,7 @@ function ColorTest() {
     //Wait for DOM to load before initializing a test
     useEffect(() => {
         init();
-        //React warning about missing dependencies in useEffect: "react-hooks/exhaustive-deps"
-        //It is ignored, as the code works fine despite the warning, and the focus of the project is not here
-        // eslint-disable-next-line
+    // eslint-disable-next-line
     }, []);
     
     function loop() {
@@ -556,6 +554,7 @@ function ColorTest() {
             //Toggle "command central"
             if (/^'$/.test(key)) {
                 wrapper.current.style.display = wrapper.current.style.display === "none" ? "block" : "none";
+                // startPage
                 return;
             }
             
@@ -622,6 +621,9 @@ function ColorTest() {
                     currentBrightness = 20;
                 }
 
+                // recieveColor("tritan");
+                // recieveRadio(3);
+
                 //TODO: Potentially download the whole array worth with the excel file 
 
                 //Too big for excel, need another method
@@ -681,6 +683,29 @@ function ColorTest() {
                     <defs ref={svgFillColors}></defs>
                     <g ref={SVG_output_figures}></g>
                 </svg>
+            </div>
+            <div ref={startPage}>
+                {/* Add date to data? */}
+                <h1>
+                    Welcome to the color test    
+                </h1>
+                
+                (add a information disclosure?)
+
+                <h3>
+                    Enter your age range (18-25, 26-34, 45-54...)    
+                </h3>
+                Age: 
+                <h3>
+                Enter your gender at birth (This is relevant as color vision deficency is more prevelant with males):
+                </h3>
+                Male/Female/Do not wish
+
+                <h3>
+                    Start test
+                </h3>
+                <button>Start</button>
+
             </div>
             <div ref={wrapper}>
                 <ExcelExport data={dataExcel} fileName="UserData" />
