@@ -709,14 +709,14 @@ function Color({  srgbValue,
     </div>
           {/* Color box for calibrating screen color */}
           <div ref={colorBox} style={{width: "300px", height:"300px", backgroundColor:"rgb("+calcSRGBClick()[0]+", "+ calcSRGBClick()[1] + ", " + calcSRGBClick()[2]+")"}}></div>
-      <text style={{fontSize: "20", textAnchor: "middle", cursor: "default"}}
+      <p style={{fontSize: "20", textAnchor: "middle", cursor: "default"}}
           x={`${10 + clickPosition.x * 0.8}%`}
           y={`${11.7 + clickPosition.y * 0.8}%`}
         >
           x: {(clickPosition.x / 100).toFixed(3)}, 
           y: {(1-(clickPosition.y / 100)).toFixed(3)}, 
           sRGB: {calcSRGBClick()[0]+", "+ calcSRGBClick()[1] + ", " + calcSRGBClick()[2]}
-        </text>
+        </p>
     </div>
 
   );

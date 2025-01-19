@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import Color from "./Color";
 import ReactDOM from "react-dom/client";
 import ExcelExport from './ExcelExport';
+import "./ColorTest.css"
 
 
 function ColorTest() {
@@ -31,10 +32,6 @@ function ColorTest() {
     let fps = useRef();
     let plate = useRef();
 
-
-    //Original file from previous project: circles.js
-
-
     //Circle class
     class Circle {
         constructor(x, y, r) {
@@ -46,16 +43,10 @@ function ColorTest() {
         }
     }
 
-    //Original file from previous project: math.js
-
 
     function getDistance(obj1, obj2) { // Get distance between two points
         return Math.sqrt((obj1.x - obj2.x) * (obj1.x - obj2.x) + (obj1.y - obj2.y) * (obj1.y - obj2.y));
     }
-
-
-    //Original file from previous project: globals.js
-
 
     //Global Variables
 
@@ -81,29 +72,29 @@ function ColorTest() {
     let [motiveW] = useState(400);
     
     let [currentRadio] = useState(0);
-    let [currentBrightness] = useState(100);
+    let currentBrightness = useRef(100);
     let [currentColorType] = useState("protan");
     let [currentColorList] = useState([]);
     let [globalNumColors] = useState(1); // How many colors on motive and background(each)
     let [globalNumSpecialColors] = useState(1); // How many special colors
     let [numConfusionLines] = useState(4); // How many special colors
 
+    let startTest = useRef(false);
 
-    let [noiseLevel] = useState(0.000);
-    let [colRadius] = useState(0.02);
+
+    let noiseLevel = useRef(0.000);
+    let [colRadius] = useState(0.01);
     
     let [globalCurrentType] = useState("Circle"); // Current type of figure to be drawn
 
     let figures = useRef([]);
 
     let fpsb = useRef(new Date()); // How many special colors
-    let fpsCount = useRef(2);
+    let fpsCount = useRef(5);
     
-    let [activeTest] = useState("noise");
+    let activeTest = useRef("noise");
 
     // Main loop
-    //Original file from previous project: core.js
-    
     function init() {
         setInterval(loop, 1000 / 60);
         placeCircles();
@@ -113,6 +104,10 @@ function ColorTest() {
         getTextMap("3");
         loading.current.style.display = "none";
         app.current.style.display = "block";
+
+        //Start with a line for color test
+        recieveColor("protan");
+        recieveRadio(1);
     }
     
     //Wait for DOM to load before initializing a test
@@ -152,12 +147,8 @@ function ColorTest() {
         }
         
     }
-    
-    //Original file from previous project: tools.js
 
     function placeCircles() { // Algorithm that places circles (points) in the plate
-        // generated.current.innerHTML = "<b>GENERATING FIGURES ... </b>"; // Output info'// does not work
-        
 
         figures.current = [];                                         // Clears container with circle objects
         for (let i = 0; i < numberOfFigures; i++) {                 // Tries many times to place circle
@@ -266,9 +257,15 @@ function ColorTest() {
         for (let i = 0; i < figures.current.length; i++) { // Go through all figures
             let figure;                            // Variable definition
             // Different svg element for different figures
-            if (globalCurrentType === "Circle" || globalCurrentType === "Ring")
+            if (globalCurrentType === "Circle" || globalCurrentType === "Ring"){
                 figure = document.createElementNS(svg.namespaceURI, "circle");
-            else figure = document.createElementNS(svg.namespaceURI, "ellipse");
+            } else if(globalCurrentType === "Rect"){
+                figure = document.createElementNS(svg.namespaceURI, "rect");
+            } else if(globalCurrentType === "Square"){
+                figure = document.createElementNS(svg.namespaceURI, "rect");
+            } else {
+                figure = document.createElementNS(svg.namespaceURI, "ellipse");
+            }
             
             // Need this to make Ring element information
             let ring = 0;
@@ -280,10 +277,27 @@ function ColorTest() {
             figure.setAttribute("class", figures.current[i].fill);
             figure.setAttribute("cx", (figures.current[i].x * 10));
             figure.setAttribute("cy", figures.current[i].y * 10);
-            if (globalCurrentType === "Circle" || globalCurrentType === "Ring")
+            if (globalCurrentType === "Circle" || globalCurrentType === "Ring"){
                 figure.setAttribute("r", (((figures.current[i].r + globalRadiusChange) < 1 ? 0 : (figures.current[i].r + globalRadiusChange) + ring)) * 10);
-            else {
-                figure.setAttribute("rx", ((figures.current[i].r + globalRadiusChange) < 1 ? 0 : (figures.current[i].r + globalRadiusChange) * 10));
+            } else if (globalCurrentType === "Rect") {
+                figure.setAttribute("x", figures.current[i].x * 9.7); 
+                figure.setAttribute("y", figures.current[i].y * 9.9);
+                figure.setAttribute("width", ((figures.current[i].r + globalRadiusChange) < 1 ? 0 : (figures.current[i].r + globalRadiusChange)) * 10); 
+                figure.setAttribute("height", ((figures.current[i].r / 2 + globalRadiusChange / 2) < 1 ? 0 : (figures.current[i].r / 2 + globalRadiusChange / 2)) * 10);
+                figure.setAttribute("transform", "rotate(" + figures.current[i].angle * 180 / Math.PI + "," + 
+                    (Number(figure.getAttribute("x")) + Number(figure.getAttribute("width")) / 2) + "," + 
+                    (Number(figure.getAttribute("y")) + Number(figure.getAttribute("height")) / 2) + ")");
+            } else if (globalCurrentType === "Square") {
+                let size = ((figures.current[i].r + globalRadiusChange) < 1 ? 0 : (figures.current[i].r + globalRadiusChange)) * 10;
+                figure.setAttribute("x", figures.current[i].x * 9.7);
+                figure.setAttribute("y", figures.current[i].y * 9.8); 
+                figure.setAttribute("width", size); 
+                figure.setAttribute("height", size); 
+                figure.setAttribute("transform", "rotate(" + figures.current[i].angle * 180 / Math.PI + "," +
+                    (Number(figure.getAttribute("x")) + size / 2) + "," + 
+                    (Number(figure.getAttribute("y")) + size / 2) + ")");
+            } else { //ellipse
+                figure.setAttribute("rx", ((figures.current[i].r + globalRadiusChange) < 1 ? 0 : (figures.current[i].r + globalRadiusChange) * 9.8));
                 figure.setAttribute("ry", ((figures.current[i].r / 2 + globalRadiusChange / 2) < 1 ? 0 : (figures.current[i].r / 2 + globalRadiusChange / 2)) * 10);
                 figure.setAttribute("transform", "rotate(" + figures.current[i].angle * 180 / Math.PI + "," + (Number(figure.getAttribute("cx")) + Number(figure.getAttribute("rx")) / 2) + "," + (Number(figure.getAttribute("cy")) + Number(figure.getAttribute("ry")) / 2) + ")");
             }
@@ -314,10 +328,10 @@ function ColorTest() {
             root.render(
                 <Color  globalNumColors={globalNumColors*2} 
                         numConfusionLines={numConfusionLines} 
-                        noiseLevel={noiseLevel} 
+                        noiseLevel={noiseLevel.current} 
                         colRadius={colRadius} 
                         currentRadio={currentRadio} 
-                        currentBrightness={currentBrightness}
+                        currentBrightness={currentBrightness.current}
                         currentColorType={currentColorType}
                         recieveRadioVal={(value) => recieveRadio(value)} 
                         recieveBrightnessVal={(value) => recieveBrightness(value)}
@@ -500,32 +514,8 @@ function ColorTest() {
     //(add option for customizing later)
 
 
-
-    //Should have a save button
-    //Once saved, will be basis for the dynamic version. 
-    
-    //Button for regenerating new random lines
-
     //Super optional: make your own line
 
-
-    //Presentation test
-    //Have some "presentation" mode that can be switched back and forth with e.g. "*"
-    //Pre mode should hide all other svgs for proper styling - display:none does not work, needs to remove
-
-    //Cannot back and forth, have to reload
-
-
-
-    // IDEA: What if everything happens on screen, 
-    // Click "start" hides menu, then we keep that one thing on screen at all times
-    // Only save for later use maybe 
-
-    //IDEA: Use a single confusion line for a single full test?
-    //This would be the only manual inpiut at the start
-
-    //PROBLEM: default values suck
-    //PROBLEM: second creation had null background (black)
 
 
     };
@@ -535,7 +525,7 @@ function ColorTest() {
     }
 
     const recieveBrightness = (newBri) => {
-        currentBrightness = newBri;
+        currentBrightness.current = newBri;
     }
     const recieveColor = (newCol) => {
         currentColorType = newCol;
@@ -548,13 +538,20 @@ function ColorTest() {
     const dataExcel = [];
 
     useEffect(() => {
+
+        //Check for key press during testing
         const handleKeyDown = (event) => {
             const key = event.key;
 
-            //Toggle "command central"
+            //Wait for startTest button to be pressed
+            if(!startTest.current){
+                return;
+            }
+
+            
+            //Toggle "command central" during testing (turn off for test)
             if (/^'$/.test(key)) {
                 wrapper.current.style.display = wrapper.current.style.display === "none" ? "block" : "none";
-                // startPage
                 return;
             }
             
@@ -571,7 +568,7 @@ function ColorTest() {
                 placeCirclesButton.current.click();
 
                 //Test parameters
-                if(motive.current.value === key || globalRadiusChange > 3 || globalBorder || noiseLevel > 0.01 || (currentBrightness > 80 && activeTest === "brightness")){
+                if(motive.current.value === key || globalRadiusChange > 3 || globalBorder || noiseLevel.current > 0.01 || (currentBrightness.current > 80 && activeTest.current === "brightness")){
                     correctPress = true;
                 }
             }         
@@ -591,10 +588,10 @@ function ColorTest() {
                 Motive: motive.current.value, 
                 UserKey: key, 
                 CorrectPress: correctPress ? "yes" : "no", 
-                NoiseLevel: activeTest === "noise" ? noiseLevel : "",
-                CircleSize: activeTest === "size" ? globalRadiusChange : "",
-                Border: activeTest === "border" ? globalBorder ? "yes" : "no" : "",
-                Brightness: currentBrightness, 
+                NoiseLevel: activeTest.current === "noise" ? noiseLevel.current : "",
+                CircleSize: activeTest.current === "size" ? globalRadiusChange : "",
+                Border: activeTest.current === "border" ? globalBorder ? "yes" : "no" : "",
+                Brightness: currentBrightness.current, 
                 ColorDeficiency: currentColorType,
                 sRGB: listColorString,
             });
@@ -602,27 +599,42 @@ function ColorTest() {
             //If correctly pressed or maxed parameters, reset paramters and set new motive
             if(correctPress){
                 //Pick new random motive for next test
-                const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-                const randomIndex = Math.floor(Math.random() * chars.length);
-                //Add if check for same motive twice in a row 
-                motive.current.value = chars[randomIndex];
+                //Removed l, 1 and 0 to avoid mix-ups
+                const chars = "abcdefghijkmnopqrstuvwxyz23456789";
+                let randomIndex = Math.floor(Math.random() * chars.length);
+                //Prevent same motive twice in a row 
+                if(chars[randomIndex] === motive.current.value && randomIndex > 0){
+                    randomIndex -= 1;
+                } else if(chars[randomIndex] === motive.current.value){
+                    randomIndex += 1;
+                }
+                motive.current.value = chars[randomIndex]
                 getTextMap(chars[randomIndex]);
 
                 //Reset paramters
-                // eslint-disable-next-line
-                noiseLevel = 0;
-                // eslint-disable-next-line
+                noiseLevel.current = 0;
+                //eslint-disable-next-line
                 globalRadiusChange = 0;
-                // eslint-disable-next-line
+                //eslint-disable-next-line
                 globalBorder = false;
 
-                if(activeTest === "brightness"){
-                // eslint-disable-next-line
-                    currentBrightness = 20;
+                if(activeTest.current === "brightness"){
+                    currentBrightness.current = 20;
                 }
 
-                // recieveColor("tritan");
-                // recieveRadio(3);
+                //Cycle confusion lines and color tests
+                if(currentRadio === numConfusionLines){
+                    if(currentColorType === "protan"){
+                        recieveColor("deutan");
+                    } else {
+                        recieveColor("tritan");
+                    }
+                    recieveRadio(1);
+                } else {
+                    recieveRadio(currentRadio+1);
+                }
+                
+                // activeTest.current = "brightness";
 
                 //TODO: Potentially download the whole array worth with the excel file 
 
@@ -631,19 +643,23 @@ function ColorTest() {
                 // svgList.current.push(svgCircles.current.innerHTML);
 
 
+                //TODO:
+                //If we dont have random confusion lines, we can save which confusion line
+
+
             } else {
                 //Change parameters after incorrect motive input
-                if(activeTest === "noise"){
-                    noiseLevel += 0.002;
+                if(activeTest.current === "noise"){
+                    noiseLevel.current += 0.002;
                 }
-                if(activeTest === "size"){
+                if(activeTest.current === "size"){
                     globalRadiusChange++;
                 }
-                if(activeTest === "border"){
+                if(activeTest.current === "border"){
                     globalBorder = true;
                 }
-                if(activeTest === "brightness"){
-                    currentBrightness += 20;
+                if(activeTest.current === "brightness"){
+                    currentBrightness.current += 20;
                 }
             }
             //Re-render color test
@@ -670,7 +686,7 @@ function ColorTest() {
             <h1 style={{ textAlign: "center" }}>Loading...</h1>
         </div>
         <div ref={app} onClick={() => { globalDraw.current = true; }}>
-            <div ref={svgCircles} className="plateDiv">
+            <div ref={svgCircles} style={{display:"none"}} className="plateDiv">
                 <svg xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" width="4in" height="4in" version="1.1"
                     style={{
                         shapeRendering: "geometricPrecision",
@@ -684,37 +700,84 @@ function ColorTest() {
                     <g ref={SVG_output_figures}></g>
                 </svg>
             </div>
-            <div ref={startPage}>
+            <div ref={startPage} className="startPage">
                 {/* Add date to data? */}
                 <h1>
                     Welcome to the color test    
                 </h1>
                 
-                (add a information disclosure?)
+                <h2>Information disclosure:</h2>
+
+                <p>By participating in this test, you agree to having your <br></br>
+                approximate age and birth gender recorded and stored for the duration <br></br>
+                of the spring semester of 2025. It will be used for my master's thesis <br></br>
+                regarding testing people's color vision using an improved Ishihara test....  <br></br>
+                Data will be deleted... Send me an email if you would like to withdraw your information....
+
+                <br></br><br></br>
+                Contact me at <b>andelha@stud.ntnu.no</b> if you have any questions regarding the test.
+                <br></br><br></br>
+                <i>-Anders Lunde Hagen</i>
+                </p>
 
                 <h3>
-                    Enter your age range (18-25, 26-34, 45-54...)    
+                    Select your age range:   
                 </h3>
-                Age: 
-                <h3>
-                Enter your gender at birth (This is relevant as color vision deficency is more prevelant with males):
-                </h3>
-                Male/Female/Do not wish
+                <div style={{display:"inline-block", textAlign:"right"}}>
+                    <label>Under 18<input name="age" type="radio"></input></label><br></br>
+                    <label>18-25<input name="age" type="radio"></input></label><br></br>
+                    <label>26-35<input name="age" type="radio"></input></label><br></br>
+                    <label>36-45<input name="age" type="radio"></input></label><br></br>
+                    <label>46-55<input name="age" type="radio"></input></label><br></br>
+                    <label>56-65<input name="age" type="radio"></input></label><br></br>
+                    <label>66-75<input name="age" type="radio"></input></label><br></br>
+                    <label>Over 75<input name="age" type="radio"></input></label>
+                </div>
 
+                <h3>
+                Select your gender at birth: <br></br>
+                (Reason: males have a considerably higher chance of being born with a color vision deficiency):
+                </h3>
+                <div style={{display:"inline-block", textAlign:"right"}}>
+                    <label>Male<input name="gender" type="radio"></input></label><br></br>
+                    <label>Female<input name="gender" type="radio"></input></label><br></br>
+                    <label>No answer<input name="gender" type="radio"></input></label><br></br>
+                </div>
+
+                <h3> How to do the test: </h3>
+                <p>
+                    Once you click the start button, multiple color tests will <br></br>
+                    appear one at a time, with either a lowercase letter or a number. <br></br>
+                    Your task is to press the corresponding key on the keyboard of <br></br>
+                    this laptop as they appear. The test will go through several different <br></br>
+                    types of tests as you progress. 
+                    <br></br><br></br>
+                    Disclaimer: There is no score or any form of results for you <br></br>
+                    at the end of the test (maybe give some results? Like 45/50 correct) 
+                </p>
+                
                 <h3>
                     Start test
                 </h3>
-                <button>Start</button>
+                <button onClick={() => {
+                    startTest.current = true
+                    //Hide start page
+                    startPage.current.style.display = "none";
+                    svgCircles.current.style.display = "block";
+                    wrapper.current.style.display = "none";
+                    
+                    
+                    }}>Start</button>
 
             </div>
-            <div ref={wrapper}>
+            <div ref={wrapper} style={{display:"none"}}>
                 <ExcelExport data={dataExcel} fileName="UserData" />
                 <select onChange={(e) => {
-                    activeTest = e.target.value; 
+                    activeTest.current = e.target.value; 
                     //Set brightness to testing value
-                    if(e.target.value === "brightness"){currentBrightness=20;} 
+                    if(e.target.value === "brightness"){currentBrightness.current=20;} 
                     else {
-                        currentBrightness = 100;
+                        currentBrightness.current = 100;
                     }
                     //re-render after choice
                     showColorChoice();
@@ -733,6 +796,8 @@ function ColorTest() {
                         <select onChange={(e) => {globalCurrentType = e.target.value;}}>
                             <option value="Circle" defaultValue={"Circle"}>Circles</option>
                             <option value="Ellipse">Ellipses</option>
+                            <option value="Rect">Rectangle</option>
+                            <option value="Square">Square</option>
                             <option value="Ring">Rings</option>
                         </select>
                         <br />
@@ -875,7 +940,7 @@ function ColorTest() {
                             onInput={(e) => {
                                 let value = e.target.value;
 
-                                noiseLevel = Number(value); 
+                                noiseLevel.current = Number(value); 
                                 showColorChoice();
                                 setColor();
                                 drawSVG();
@@ -884,7 +949,7 @@ function ColorTest() {
                             }}/>
                             <br></br>
                             <label> Collision radius? </label>
-                        <input type="number" defaultValue="0.02" min="0" max="1"  step={"0.002"}
+                        <input type="number" defaultValue="0.0" min="0" max="1"  step={"0.002"}
                             onInput={(e) => {
                                 let value = e.target.value;
 
@@ -902,7 +967,7 @@ function ColorTest() {
                 </div>
             </div>
         </div>
-        <canvas ref={plate} width="400" height="400"></canvas>
+        <canvas ref={plate} style={{display:"none"}} width="400" height="400"></canvas>
         </div>
     );
 }
