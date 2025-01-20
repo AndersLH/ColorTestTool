@@ -18,6 +18,7 @@ function ColorTest() {
     let SVG_output_figures = useRef();
     let wrapper = useRef();
     let startPage = useRef();
+    let endPage = useRef();
     let controls = useRef();
     let motive = useRef();
     let motiveImage = useRef();
@@ -79,7 +80,29 @@ function ColorTest() {
     let [globalNumSpecialColors] = useState(1); // How many special colors
     let [numConfusionLines] = useState(4); // How many special colors
 
+    let backgroundColor = useRef("#FFFFFF");
+
     let startTest = useRef(false);
+
+    //Track score for player
+    let scoreParticipantP = useRef(0);
+    let maxScoreP = useRef(0);
+
+    let scoreParticipantD = useRef(0);
+    let maxScoreD = useRef(0);
+
+    let scoreParticipantT = useRef(0);
+    let maxScoreT = useRef(0);
+
+    let [finalMaxScoreP,setFinalMaxScoreP] = useState(0);
+    let [finalScoreParticipantP, setFinalScoreParticipantP] = useState(0);
+
+    let [finalMaxScoreD,setFinalMaxScoreD] = useState(0);
+    let [finalScoreParticipantD, setFinalScoreParticipantD] = useState(0);
+
+    let [finalMaxScoreT,setFinalMaxScoreT] = useState(0);
+    let [finalScoreParticipantT, setFinalScoreParticipantT] = useState(0);
+
 
 
     let noiseLevel = useRef(0.000);
@@ -316,8 +339,6 @@ function ColorTest() {
         // Make this more readable
         let colorchoices = colorChoice.current;
         colorchoices.innerHTML = "";
-
-
         
         for (let i = 0; i < globalNumColors * 2; i++) {
 
@@ -413,7 +434,7 @@ function ColorTest() {
                         document.getElementById(this.id + "_label").value = this.value.replace('#', '');
                         drawSVG();
                     });
-                    input.value = "#FFFFFF";
+                    input.value = backgroundColor.current;
                     colorchoices.appendChild(input);
                     label = document.createElement("label");
                     label.innerHTML = " # ";
@@ -459,22 +480,18 @@ function ColorTest() {
     }
 
     //List of svgs
-    // let svgList = useRef([]);
-    //Div for all svg print
     let svgDiv = useRef(null);
 
 
 
     const recieveSrgbValue = (newSrgb) => {
-
         currentColorList = newSrgb;
         //Set style color for circles
         for (let i = 0; i < globalNumColors * 2; i++) {
             //mix colors TODO
             document.getElementById("fil"+i).value =  newSrgb[i]  // hexList.current[i];
         }
-
-
+    };
     //   Add each SVG string into the div (early testing)
     // svgDiv.current.innerHTML = "";
     //   svgList.current.forEach((svgContent) => {
@@ -483,47 +500,13 @@ function ColorTest() {
     //     svgDiv.current.appendChild(container); // Append the div to the target div
     //   });
       
-
-
-    //List of elements to change
-    //Increase size 
-    //Add border?
-    //Increase noise level of color on confusion line
-    //Change background color/contrast - related to size?
-    //Geometric shapes - related to size?
     //Include a timer, more time spent = more difficulty seeing it
 
-    //Color image on background
 
-    //Confusion lines table
-    //Tables, one for each graph
-    //Generate e.g. 4 lines on a graph
-    //  Lines are seperated by x amount
-    //  Donts on lines are seperated by y amount
-    //  Avoids white point by z radius
-    //Checkmarks in table for which line. Use refs. Highlight selected.
-    //If multiple colors/dots, add rows in table. 
-    //Have checkmark with preview or color values, maybe both in table
-
-    //One table
-    //3 buttons: proton, deuatn, tritan
-    //Pick 1 of e.g. 4 columns (highlight confusion line)
-    //Each row is a color, e.g. 3 rows = 1 for each  
-
-    //NOTE: We only need one single now, one graph
-    //(add option for customizing later)
-
-
-    //Super optional: make your own line
-
-
-
-    };
-
+    //Change values from child element
     const recieveRadio = (newRadio) => {
         currentRadio = newRadio;
     }
-
     const recieveBrightness = (newBri) => {
         currentBrightness.current = newBri;
     }
@@ -537,8 +520,8 @@ function ColorTest() {
     //Data for excel sheet
     const dataExcel = [];
 
+    //Color testing
     useEffect(() => {
-
         //Check for key press during testing
         const handleKeyDown = (event) => {
             const key = event.key;
@@ -548,8 +531,7 @@ function ColorTest() {
                 return;
             }
 
-            
-            //Toggle "command central" during testing (turn off for test)
+            //Toggle settings during testing (turn off for live data collection)
             if (/^'$/.test(key)) {
                 wrapper.current.style.display = wrapper.current.style.display === "none" ? "block" : "none";
                 return;
@@ -562,19 +544,24 @@ function ColorTest() {
                 
             let correctPress = false;
 
-            //Check for correct key press or maxed paramters
+            //Check for valid inputs
             if (/^[a-z0-9]$/.test(key)) {
-                //Simulate click on generate figures
+                //Simulate click on generate figures to generate a new plate
                 placeCirclesButton.current.click();
 
-                //Test parameters
-                if(motive.current.value === key || globalRadiusChange > 3 || globalBorder || noiseLevel.current > 0.01 || (currentBrightness.current > 80 && activeTest.current === "brightness")){
+                //Check for correct press or maxed out parameters
+                if( motive.current.value === key || 
+                    globalRadiusChange > 3 || 
+                    globalBorder || 
+                    noiseLevel.current > 0.01 || 
+                    (currentBrightness.current > 80 && activeTest.current === "brightness") || 
+                    (backgroundColor.current === "#000000" && activeTest.current === "background")){
                     correctPress = true;
                 }
             }         
 
                 
-            //Generate list of current colors into string format 
+            //Generate list of current colors into string format for the Excel file
             let listColorString = "";
             for(let i = 0; i < globalNumColors*2; i++){
                 listColorString += currentColorList[i] 
@@ -591,17 +578,32 @@ function ColorTest() {
                 NoiseLevel: activeTest.current === "noise" ? noiseLevel.current : "",
                 CircleSize: activeTest.current === "size" ? globalRadiusChange : "",
                 Border: activeTest.current === "border" ? globalBorder ? "yes" : "no" : "",
-                Brightness: currentBrightness.current, 
+                Brightness: currentBrightness.current,
+                BackgroundColor: activeTest.current === "background" ? backgroundColor.current : "",  
                 ColorDeficiency: currentColorType,
                 sRGB: listColorString,
             });
 
+            switch(currentColorType){
+                case "protan": maxScoreP.current += 1; break;
+                case "deutan": maxScoreD.current += 1; break;
+                case "tritan": maxScoreT.current += 1; break;
+                default: break;
+            }
+            
             //If correctly pressed or maxed parameters, reset paramters and set new motive
             if(correctPress){
+                switch(currentColorType){
+                    case "protan": scoreParticipantP.current += 1; break;
+                    case "deutan": scoreParticipantD.current += 1; break;
+                    case "tritan": scoreParticipantT.current += 1; break;
+                    default: break;
+                }
+
                 //Pick new random motive for next test
-                //Removed l, 1 and 0 to avoid mix-ups
-                const chars = "abcdefghijkmnopqrstuvwxyz23456789";
+                const chars = "abcdefghijkmnopqrstuvwxyz23456789"; //Removed l, 1 and 0 to avoid mix-ups
                 let randomIndex = Math.floor(Math.random() * chars.length);
+
                 //Prevent same motive twice in a row 
                 if(chars[randomIndex] === motive.current.value && randomIndex > 0){
                     randomIndex -= 1;
@@ -611,19 +613,43 @@ function ColorTest() {
                 motive.current.value = chars[randomIndex]
                 getTextMap(chars[randomIndex]);
 
-                //Reset paramters
+                //Reset parameters
                 noiseLevel.current = 0;
                 //eslint-disable-next-line
                 globalRadiusChange = 0;
                 //eslint-disable-next-line
                 globalBorder = false;
 
+                //Background color parameter reset
+                if(activeTest.current === "background"){
+                    backgroundColor.current = "#BFBFBF";
+                }
+
+                //Brightness parameter reset
                 if(activeTest.current === "brightness"){
                     currentBrightness.current = 20;
                 }
 
-                //Cycle confusion lines and color tests
-                if(currentRadio === numConfusionLines){
+                //Reached last test
+                if(currentRadio === numConfusionLines && currentColorType === "tritan"){
+                    endPage.current.style.display = "block";
+                    svgCircles.current.style.display = "none";
+                    startTest.current = false;
+
+                    //Update state of final scores
+                    setFinalScoreParticipantP((prevMax) => prevMax + scoreParticipantP.current);
+                    setFinalScoreParticipantD((prevMax) => prevMax + scoreParticipantD.current);
+                    setFinalScoreParticipantT((prevMax) => prevMax + scoreParticipantT.current);
+                    setFinalMaxScoreP((prevScore) => prevScore + maxScoreP.current);
+                    setFinalMaxScoreD((prevScore) => prevScore + maxScoreD.current);
+                    setFinalMaxScoreT((prevScore) => prevScore + maxScoreT.current);
+
+                    //Reset colors for new test
+                    recieveColor("protan");
+                    recieveRadio(1);
+                
+                } else if(currentRadio === numConfusionLines){
+                    //Cycle confusion lines and color tests
                     if(currentColorType === "protan"){
                         recieveColor("deutan");
                     } else {
@@ -634,7 +660,6 @@ function ColorTest() {
                     recieveRadio(currentRadio+1);
                 }
                 
-                // activeTest.current = "brightness";
 
                 //TODO: Potentially download the whole array worth with the excel file 
 
@@ -660,6 +685,17 @@ function ColorTest() {
                 }
                 if(activeTest.current === "brightness"){
                     currentBrightness.current += 20;
+                }
+                if(activeTest.current === "background"){
+                    //Remove "#"
+                    let colorHex = backgroundColor.current.slice(1);
+                    //Reduce the color in hex by 1/4th of a step towards black 
+                    let colorInt = parseInt(colorHex, 16);
+                    colorInt -= 0x404040; 
+                    if (colorInt < 0) colorInt = 0; //Prevent negative numbers
+                    //Helps if-checks in case the hex number is less than 6 characters 
+                    colorHex = colorInt.toString(16).padStart(6, "0"); 
+                    backgroundColor.current = `#${colorHex}`;
                 }
             }
             //Re-render color test
@@ -752,8 +788,11 @@ function ColorTest() {
                     this laptop as they appear. The test will go through several different <br></br>
                     types of tests as you progress. 
                     <br></br><br></br>
-                    Disclaimer: There is no score or any form of results for you <br></br>
-                    at the end of the test (maybe give some results? Like 45/50 correct) 
+                    At the end of the test, you will be given how many <br></br>
+                    correct and incorrect answers you got. There will be about 80 <br></br> 
+                    Ishihara plates and will take about 4 minutes to finish. 
+
+                     
                 </p>
                 
                 <h3>
@@ -765,10 +804,41 @@ function ColorTest() {
                     startPage.current.style.display = "none";
                     svgCircles.current.style.display = "block";
                     wrapper.current.style.display = "none";
-                    
-                    
                     }}>Start</button>
 
+            </div>
+            <div ref={endPage} style={{display:"none"}} className="endPage">
+
+                <div style={{display:"inline-block", textAlign:"left"}}>
+                You have finished the test, thank you for participating! You got <br></br> 
+                    <b>{finalScoreParticipantP}/{finalMaxScoreP}</b> correct answers for protan (red). <br></br> 
+                    <b>{finalScoreParticipantD}/{finalMaxScoreD}</b> correct answers for deutan (green). <br></br> 
+                    <b>{finalScoreParticipantT}/{finalMaxScoreT}</b> correct answers for tritan (blue). <br></br> 
+                </div>
+
+                    <br></br>
+                    <br></br>
+                Manual reset for now:
+                <button onClick={() => { 
+                    //Hide start page
+                    startPage.current.style.display = "block";
+                    endPage.current.style.display = "none";
+                    svgCircles.current.style.display = "none";
+
+                    //Reset scores
+                    scoreParticipantP.current = 0;
+                    scoreParticipantD.current = 0;
+                    scoreParticipantT.current = 0;
+                    maxScoreP.current = 0;
+                    maxScoreD.current = 0;
+                    maxScoreT.current = 0;
+                    setFinalScoreParticipantP(0);
+                    setFinalScoreParticipantD(0);
+                    setFinalScoreParticipantT(0);
+                    setFinalMaxScoreP(0);
+                    setFinalMaxScoreD(0);
+                    setFinalMaxScoreT(0);
+                    }}>Reset</button>
             </div>
             <div ref={wrapper} style={{display:"none"}}>
                 <ExcelExport data={dataExcel} fileName="UserData" />
@@ -776,10 +846,12 @@ function ColorTest() {
                     activeTest.current = e.target.value; 
                     //Set brightness to testing value
                     if(e.target.value === "brightness"){currentBrightness.current=20;} 
-                    else {
-                        currentBrightness.current = 100;
-                    }
-                    //re-render after choice
+                    else {currentBrightness.current = 100;}
+                    
+                    //Set background color to testing grey
+                    if(e.target.value === "background"){backgroundColor.current = "#BFBFBF";}
+                    else {backgroundColor.current = "#FFFFFF";}
+                    //re-render after changing parameter
                     showColorChoice();
                     setColor();
                     drawSVG();
@@ -788,6 +860,7 @@ function ColorTest() {
                     <option value="size">Size</option>
                     <option value="border">Border</option>
                     <option value="brightness">Brightness</option>
+                    <option value="background">Background Color</option>
                 </select>
                 <div ref={controls}>
                     <fieldset style={{width: "20%", float: "left"}}>
