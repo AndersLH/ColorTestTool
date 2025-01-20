@@ -3,9 +3,57 @@
     text-align: center;
 }
 
-
-
 .endPage{
     margin:50px;
     text-align: center;
 }
+
+/* Default button styling */
+button {
+    background-color: #0f4300;
+    color: white;
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* Default radio button styling */
+label {
+    font-size: 16px;
+    cursor: pointer;
+    display: inline-flex;  
+    margin-bottom: 5px;
+}
+
+input[type="radio"] {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #000000;
+    border-radius: 50%; 
+    outline: none;
+    cursor: pointer;
+    transition: 0.3s all ease;
+
+}
+
+input[type="radio"]:checked {
+    background-color: #e9e9e9; 
+    border-color: #ffffff;
+}
+
+input[type="radio"]:hover {
+    border-color: #f1f1f1;
+}
+
+input[type="radio"]:focus {
+    box-shadow: 0 0 5px rgba(224, 224, 224, 0.8); /* Green glow */
+}
+

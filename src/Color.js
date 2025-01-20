@@ -82,7 +82,7 @@ function xyy2srgb(x, y, Y) {
 //   const denominator = X + 15 * Y + 3 * Z;
 
 //   if (denominator === 0) {
-//       return [0, 0]; // Default to (0, 0) if the input leads to an undefined chromaticity
+//       return [0, 0]; 
 //   }
 
 //   // Calculate u' and v' chromaticity coordinates
@@ -96,9 +96,6 @@ function xyy2srgb(x, y, Y) {
 
 // let up = 0.24;
 // let vp = 0.5;
-
-
-
 
 
 
@@ -313,7 +310,7 @@ function Color({  srgbValue,
 
     //If out of boundary, use recursion until it is
     while(!isPointInTriangle(dot.x,dot.y)){
-      t += 0.02;
+      t += 0.06;
       dot = mathInter(x1,y1,x2,y2,t, j);
 
       //Prevent infinite loop
@@ -402,7 +399,7 @@ function Color({  srgbValue,
     }
 
     //Prevent error when no radio is selected
-    if(currentRadio > 0){
+    if(currentRadio > 0 && document.getElementById("mm"+(currentRadio))){
       document.getElementById("mm"+(currentRadio)).dispatchEvent(new MouseEvent("click", { bubbles: true }));
     }
 

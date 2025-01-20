@@ -15,7 +15,7 @@ const ExcelExport = ({ data, fileName }) => {
   };
 
   return (
-    <button onClick={exportToExcel}>Export to Excel</button>
+    <button id="excelButton" onClick={exportToExcel}>Export to Excel</button>
   );
 }
 

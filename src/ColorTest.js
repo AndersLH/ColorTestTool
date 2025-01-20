@@ -73,46 +73,61 @@ function ColorTest() {
     let [motiveW] = useState(400);
     
     let [currentRadio] = useState(0);
-    let currentBrightness = useRef(100);
     let [currentColorType] = useState("protan");
     let [currentColorList] = useState([]);
-    let [globalNumColors] = useState(1); // How many colors on motive and background(each)
-    let [globalNumSpecialColors] = useState(1); // How many special colors
-    let [numConfusionLines] = useState(4); // How many special colors
 
-    let backgroundColor = useRef("#FFFFFF");
-
+    //Start variable for the test
     let startTest = useRef(false);
 
     //Track score for player
     let scoreParticipantP = useRef(0);
-    let maxScoreP = useRef(0);
-
     let scoreParticipantD = useRef(0);
-    let maxScoreD = useRef(0);
-
     let scoreParticipantT = useRef(0);
+    let maxScoreP = useRef(0);
+    let maxScoreD = useRef(0);
     let maxScoreT = useRef(0);
 
-    let [finalMaxScoreP,setFinalMaxScoreP] = useState(0);
     let [finalScoreParticipantP, setFinalScoreParticipantP] = useState(0);
-
-    let [finalMaxScoreD,setFinalMaxScoreD] = useState(0);
     let [finalScoreParticipantD, setFinalScoreParticipantD] = useState(0);
-
-    let [finalMaxScoreT,setFinalMaxScoreT] = useState(0);
     let [finalScoreParticipantT, setFinalScoreParticipantT] = useState(0);
+    let [finalMaxScoreP,setFinalMaxScoreP] = useState(0);
+    let [finalMaxScoreD,setFinalMaxScoreD] = useState(0);
+    let [finalMaxScoreT,setFinalMaxScoreT] = useState(0);
 
-
-
+    //Default values of parameters
     let noiseLevel = useRef(0.000);
-    let [colRadius] = useState(0.01);
-    
+    let [colRadius] = useState(0.015);
+    let backgroundColor = useRef("#FFFFFF");
     let [globalCurrentType] = useState("Circle"); // Current type of figure to be drawn
+    let [globalNumColors] = useState(1); // How many colors on motive and background(each)
+    let [globalNumSpecialColors] = useState(1); // How many special colors
+    let [numConfusionLines] = useState(1); // How many special colors
+    let currentBrightness = useRef(100);
 
+    //Track time
+    let startPlateTime = useRef(null);
+    let endPlateTime = useRef(null);
+    let plateTime = useRef(null);
+    let startTotalTime = useRef(null);
+    let endTotalTime = useRef(null);
+    let totalTime = useRef(null);
+
+    //Spam prevention timer
+    let lastClick = useRef(null);
+    let nowClick = useRef(null);
+    let currentClick = useRef(null);
+
+    //AFK timer
+    const timeoutAfk = useRef(10000);
+    let afkTimer = useRef(false);
+
+    //End screen timer
+    const timeoutEndScreen = useRef(10000);
+    let endTimer = useRef(false);
+    
     let figures = useRef([]);
 
-    let fpsb = useRef(new Date()); // How many special colors
+    let fpsb = useRef(new Date());
     let fpsCount = useRef(5);
     
     let activeTest = useRef("noise");
@@ -488,7 +503,6 @@ function ColorTest() {
         currentColorList = newSrgb;
         //Set style color for circles
         for (let i = 0; i < globalNumColors * 2; i++) {
-            //mix colors TODO
             document.getElementById("fil"+i).value =  newSrgb[i]  // hexList.current[i];
         }
     };
@@ -499,9 +513,6 @@ function ColorTest() {
     //     container.innerHTML = svgContent; // Set the SVG content
     //     svgDiv.current.appendChild(container); // Append the div to the target div
     //   });
-      
-    //Include a timer, more time spent = more difficulty seeing it
-
 
     //Change values from child element
     const recieveRadio = (newRadio) => {
@@ -518,7 +529,89 @@ function ColorTest() {
     let placeCirclesButton = useRef(null);
 
     //Data for excel sheet
-    const dataExcel = [];
+    let dataExcel = useRef([]);
+
+    //Start AFK timer to prevent people dealing with unfinished tests
+    function startAfkTimer(){
+        afkTimer.current = setTimeout(() => {
+            fullReset();
+        }, timeoutAfk.current);
+    }
+
+    //Move from the end screen to the start screen ready for next participant
+    function removeEndScreen(){
+        //Hide start page
+        startPage.current.style.display = "block";
+        endPage.current.style.display = "none";
+        svgCircles.current.style.display = "none";
+    
+        //Reset scores
+        scoreParticipantP.current = 0;
+        scoreParticipantD.current = 0;
+        scoreParticipantT.current = 0;
+        maxScoreP.current = 0;
+        maxScoreD.current = 0;
+        maxScoreT.current = 0;
+        setFinalScoreParticipantP(0);
+        setFinalScoreParticipantD(0);
+        setFinalScoreParticipantT(0);
+        setFinalMaxScoreP(0);
+        setFinalMaxScoreD(0);
+        setFinalMaxScoreT(0);
+
+        //Stop timer to prevent double refresh
+        clearTimeout(endTimer.current);
+    }
+
+    function fullReset(){
+
+        endPage.current.style.display = "block";
+        svgCircles.current.style.display = "none";
+        startTest.current = false;
+
+        //Collect data after test
+        document.getElementById("excelButton").click();
+
+        //Update state of final scores
+        setFinalScoreParticipantP((prevMax) => prevMax + scoreParticipantP.current);
+        setFinalScoreParticipantD((prevMax) => prevMax + scoreParticipantD.current);
+        setFinalScoreParticipantT((prevMax) => prevMax + scoreParticipantT.current);
+        setFinalMaxScoreP((prevScore) => prevScore + maxScoreP.current);
+        setFinalMaxScoreD((prevScore) => prevScore + maxScoreD.current);
+        setFinalMaxScoreT((prevScore) => prevScore + maxScoreT.current);
+
+        //End timer
+        endTotalTime.current = Date.now();
+        totalTime.current = endTotalTime.current - startTotalTime.current;
+
+        //Reset parameters
+        noiseLevel.current = 0.000;
+        globalRadiusChange = 0;
+        globalBorder = false;
+        backgroundColor.current = "#FFFFFF"; 
+        currentBrightness.current = 100;
+        globalCurrentType = "Circle";
+
+        //Reset colors for new test
+        recieveColor("protan");
+        recieveRadio(1);
+        activeTest.current = "noise";
+
+        //Re-render
+        showColorChoice();
+        setColor();
+        drawSVG(); 
+
+
+        //End afk timer
+        clearTimeout(afkTimer.current);
+
+        //Start timer for moving back to start page
+        endTimer.current = setTimeout(() => {
+            removeEndScreen();
+        }, timeoutEndScreen.current);        
+    }
+
 
     //Color testing
     useEffect(() => {
@@ -544,10 +637,17 @@ function ColorTest() {
                 
             let correctPress = false;
 
+            //Prevent spamming buttons and accidental double clicks
+            nowClick.current = Date.now();
+            currentClick.current = nowClick.current - lastClick.current;
+            
             //Check for valid inputs
-            if (/^[a-z0-9]$/.test(key)) {
+            if (/^[a-z0-9]$/.test(key) && currentClick.current > 200) {
                 //Simulate click on generate figures to generate a new plate
                 placeCirclesButton.current.click();
+                
+                //Register click
+                lastClick.current = Date.now();
 
                 //Check for correct press or maxed out parameters
                 if( motive.current.value === key || 
@@ -555,11 +655,22 @@ function ColorTest() {
                     globalBorder || 
                     noiseLevel.current > 0.01 || 
                     (currentBrightness.current > 80 && activeTest.current === "brightness") || 
-                    (backgroundColor.current === "#000000" && activeTest.current === "background")){
+                    (backgroundColor.current === "#000000" && activeTest.current === "background") || 
+                    globalCurrentType === "Square"){
                     correctPress = true;
                 }
-            }         
+            } else {
+                return;
+            }        
 
+            //Reset AFK timer and start it again
+            clearTimeout(afkTimer.current);
+            startAfkTimer();
+
+            //Calculate time spent on a plate
+            endPlateTime.current = Date.now();
+            plateTime.current = (endPlateTime.current - startPlateTime.current) / 1000;
+            startPlateTime.current = Date.now();
                 
             //Generate list of current colors into string format for the Excel file
             let listColorString = "";
@@ -569,17 +680,20 @@ function ColorTest() {
                     listColorString += ", "; 
                 }
             }
+
             //Add data to excel file
-            dataExcel.push({ 
+            dataExcel.current.push({ 
                 ID: 1,  
                 Motive: motive.current.value, 
                 UserKey: key, 
-                CorrectPress: correctPress ? "yes" : "no", 
+                CorrectPress: motive.current.value === key ? "yes" : "no", 
                 NoiseLevel: activeTest.current === "noise" ? noiseLevel.current : "",
                 CircleSize: activeTest.current === "size" ? globalRadiusChange : "",
                 Border: activeTest.current === "border" ? globalBorder ? "yes" : "no" : "",
                 Brightness: currentBrightness.current,
                 BackgroundColor: activeTest.current === "background" ? backgroundColor.current : "",  
+                Shape: globalCurrentType,
+                TimeSpentPlate: plateTime.current,
                 ColorDeficiency: currentColorType,
                 sRGB: listColorString,
             });
@@ -614,7 +728,7 @@ function ColorTest() {
                 getTextMap(chars[randomIndex]);
 
                 //Reset parameters
-                noiseLevel.current = 0;
+                noiseLevel.current = 0.000;
                 //eslint-disable-next-line
                 globalRadiusChange = 0;
                 //eslint-disable-next-line
@@ -630,25 +744,25 @@ function ColorTest() {
                     currentBrightness.current = 20;
                 }
 
-                //Reached last test
+                if(globalCurrentType === "Square"){
+                    // eslint-disable-next-line
+                    globalCurrentType = "Circle";
+                    globalRadiusChange = 0;
+                }
+
+                //Reached final test
                 if(currentRadio === numConfusionLines && currentColorType === "tritan"){
-                    endPage.current.style.display = "block";
-                    svgCircles.current.style.display = "none";
-                    startTest.current = false;
-
-                    //Update state of final scores
-                    setFinalScoreParticipantP((prevMax) => prevMax + scoreParticipantP.current);
-                    setFinalScoreParticipantD((prevMax) => prevMax + scoreParticipantD.current);
-                    setFinalScoreParticipantT((prevMax) => prevMax + scoreParticipantT.current);
-                    setFinalMaxScoreP((prevScore) => prevScore + maxScoreP.current);
-                    setFinalMaxScoreD((prevScore) => prevScore + maxScoreD.current);
-                    setFinalMaxScoreT((prevScore) => prevScore + maxScoreT.current);
-
-                    //Reset colors for new test
-                    recieveColor("protan");
-                    recieveRadio(1);
-                
-                } else if(currentRadio === numConfusionLines){
+                    //Change parameter or finish test if all parameters are done
+                    switch(activeTest.current){
+                        case "noise": activeTest.current = "size"; recieveColor("protan"); recieveRadio(1); break;
+                        case "size": activeTest.current = "border"; recieveColor("protan"); recieveRadio(1); break;
+                        case "border": activeTest.current = "background"; recieveColor("protan"); recieveRadio(1); break;
+                        case "background": activeTest.current = "shape"; recieveColor("protan"); recieveRadio(1); break;
+                        case "shape": activeTest.current = "brightness"; recieveColor("protan"); recieveRadio(1); currentBrightness.current = 20; backgroundColor.current = "#FFFFFF"; break;
+                        case "brightness": fullReset(); currentBrightness.current = 100; break;
+                        default: break;
+                    }
+                } else if(currentRadio === numConfusionLines){ //Reached final confusion line
                     //Cycle confusion lines and color tests
                     if(currentColorType === "protan"){
                         recieveColor("deutan");
@@ -657,7 +771,7 @@ function ColorTest() {
                     }
                     recieveRadio(1);
                 } else {
-                    recieveRadio(currentRadio+1);
+                    recieveRadio(currentRadio+1); //Go to next confusion line
                 }
                 
 
@@ -675,7 +789,7 @@ function ColorTest() {
             } else {
                 //Change parameters after incorrect motive input
                 if(activeTest.current === "noise"){
-                    noiseLevel.current += 0.002;
+                    noiseLevel.current += 0.003;
                 }
                 if(activeTest.current === "size"){
                     globalRadiusChange++;
@@ -696,6 +810,15 @@ function ColorTest() {
                     //Helps if-checks in case the hex number is less than 6 characters 
                     colorHex = colorInt.toString(16).padStart(6, "0"); 
                     backgroundColor.current = `#${colorHex}`;
+                }
+                if(activeTest.current === "shape"){
+                    globalRadiusChange = 3;
+                    switch(globalCurrentType){
+                        case "Circle": globalCurrentType = "Ellipse"; break;
+                        case "Ellipse": globalCurrentType = "Rect"; break;
+                        case "Rect": globalCurrentType = "Square"; break;
+                        default: break;
+                    }
                 }
             }
             //Re-render color test
@@ -767,7 +890,8 @@ function ColorTest() {
                     <label>46-55<input name="age" type="radio"></input></label><br></br>
                     <label>56-65<input name="age" type="radio"></input></label><br></br>
                     <label>66-75<input name="age" type="radio"></input></label><br></br>
-                    <label>Over 75<input name="age" type="radio"></input></label>
+                    <label>Over 75<input name="age" type="radio"></input></label><br></br>
+                    <label>No answer<input name="age" type="radio"></input></label>
                 </div>
 
                 <h3>
@@ -804,6 +928,16 @@ function ColorTest() {
                     startPage.current.style.display = "none";
                     svgCircles.current.style.display = "block";
                     wrapper.current.style.display = "none";
+
+                    //Start plate timers
+                    startPlateTime.current = Date.now();
+                    startTotalTime.current = Date.now();
+
+                    //Spam timer
+                    lastClick.current = Date.now();
+
+                    startAfkTimer();
+
                     }}>Start</button>
 
             </div>
@@ -814,34 +948,17 @@ function ColorTest() {
                     <b>{finalScoreParticipantP}/{finalMaxScoreP}</b> correct answers for protan (red). <br></br> 
                     <b>{finalScoreParticipantD}/{finalMaxScoreD}</b> correct answers for deutan (green). <br></br> 
                     <b>{finalScoreParticipantT}/{finalMaxScoreT}</b> correct answers for tritan (blue). <br></br> 
+                    <br></br>
+                    (Disclaimer about incorrect answers not being precise and may not indicate color vision deficiency?)
                 </div>
 
                     <br></br>
                     <br></br>
-                Manual reset for now:
-                <button onClick={() => { 
-                    //Hide start page
-                    startPage.current.style.display = "block";
-                    endPage.current.style.display = "none";
-                    svgCircles.current.style.display = "none";
-
-                    //Reset scores
-                    scoreParticipantP.current = 0;
-                    scoreParticipantD.current = 0;
-                    scoreParticipantT.current = 0;
-                    maxScoreP.current = 0;
-                    maxScoreD.current = 0;
-                    maxScoreT.current = 0;
-                    setFinalScoreParticipantP(0);
-                    setFinalScoreParticipantD(0);
-                    setFinalScoreParticipantT(0);
-                    setFinalMaxScoreP(0);
-                    setFinalMaxScoreD(0);
-                    setFinalMaxScoreT(0);
-                    }}>Reset</button>
+                Click 'continue' to start a new test: <br></br>
+                <button onClick={() => removeEndScreen() }>Continue</button>
             </div>
             <div ref={wrapper} style={{display:"none"}}>
-                <ExcelExport data={dataExcel} fileName="UserData" />
+                <ExcelExport data={dataExcel.current} fileName="UserData"/>
                 <select onChange={(e) => {
                     activeTest.current = e.target.value; 
                     //Set brightness to testing value
