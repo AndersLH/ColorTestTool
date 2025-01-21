@@ -79,6 +79,10 @@ function ColorTest() {
     //Start variable for the test
     let startTest = useRef(false);
 
+    //User age and gender
+    let userAge = useRef(null);
+    let userGender = useRef(null);
+
     //Track score for player
     let scoreParticipantP = useRef(0);
     let scoreParticipantD = useRef(0);
@@ -99,9 +103,9 @@ function ColorTest() {
     let [colRadius] = useState(0.015);
     let backgroundColor = useRef("#FFFFFF");
     let [globalCurrentType] = useState("Circle"); // Current type of figure to be drawn
-    let [globalNumColors] = useState(1); // How many colors on motive and background(each)
-    let [globalNumSpecialColors] = useState(1); // How many special colors
-    let [numConfusionLines] = useState(1); // How many special colors
+    let [globalNumColors] = useState(3); // How many colors on motive and background(each)
+    let [globalNumSpecialColors] = useState(1); // How many background colors (always 1)
+    let [numConfusionLines] = useState(1); // How many confusion lines
     let currentBrightness = useRef(100);
 
     //Track time
@@ -122,7 +126,7 @@ function ColorTest() {
     let afkTimer = useRef(false);
 
     //End screen timer
-    const timeoutEndScreen = useRef(10000);
+    const timeoutEndScreen = useRef(15000);
     let endTimer = useRef(false);
     
     let figures = useRef([]);
@@ -602,7 +606,6 @@ function ColorTest() {
         setColor();
         drawSVG(); 
 
-
         //End afk timer
         clearTimeout(afkTimer.current);
 
@@ -684,6 +687,8 @@ function ColorTest() {
             //Add data to excel file
             dataExcel.current.push({ 
                 ID: 1,  
+                Age: userAge.current,
+                Gender: userGender.current,
                 Motive: motive.current.value, 
                 UserKey: key, 
                 CorrectPress: motive.current.value === key ? "yes" : "no", 
@@ -744,10 +749,10 @@ function ColorTest() {
                     currentBrightness.current = 20;
                 }
 
-                if(globalCurrentType === "Square"){
+                if(activeTest.current === "shape"){
                     // eslint-disable-next-line
-                    globalCurrentType = "Circle";
-                    globalRadiusChange = 0;
+                    globalCurrentType = "Ellipse";
+                    globalRadiusChange = 3;
                 }
 
                 //Reached final test
@@ -756,9 +761,9 @@ function ColorTest() {
                     switch(activeTest.current){
                         case "noise": activeTest.current = "size"; recieveColor("protan"); recieveRadio(1); break;
                         case "size": activeTest.current = "border"; recieveColor("protan"); recieveRadio(1); break;
-                        case "border": activeTest.current = "background"; recieveColor("protan"); recieveRadio(1); break;
-                        case "background": activeTest.current = "shape"; recieveColor("protan"); recieveRadio(1); break;
-                        case "shape": activeTest.current = "brightness"; recieveColor("protan"); recieveRadio(1); currentBrightness.current = 20; backgroundColor.current = "#FFFFFF"; break;
+                        case "border": activeTest.current = "background"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#BFBFBF"; break;
+                        case "background": activeTest.current = "shape"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#FFFFFF";  globalCurrentType = "Ellipse"; globalRadiusChange = 3; break;
+                        case "shape": activeTest.current = "brightness"; recieveColor("protan"); recieveRadio(1); globalCurrentType = "Circle"; currentBrightness.current = 20; globalRadiusChange = 0; break;
                         case "brightness": fullReset(); currentBrightness.current = 100; break;
                         default: break;
                     }
@@ -814,7 +819,6 @@ function ColorTest() {
                 if(activeTest.current === "shape"){
                     globalRadiusChange = 3;
                     switch(globalCurrentType){
-                        case "Circle": globalCurrentType = "Ellipse"; break;
                         case "Ellipse": globalCurrentType = "Rect"; break;
                         case "Rect": globalCurrentType = "Square"; break;
                         default: break;
@@ -861,17 +865,17 @@ function ColorTest() {
             </div>
             <div ref={startPage} className="startPage">
                 {/* Add date to data? */}
-                <h1>
+                <h1 className="rainbowText">
                     Welcome to the color test    
                 </h1>
                 
                 <h2>Information disclosure:</h2>
 
-                <p>By participating in this test, you agree to having your <br></br>
-                approximate age and birth gender recorded and stored for the duration <br></br>
-                of the spring semester of 2025. It will be used for my master's thesis <br></br>
-                regarding testing people's color vision using an improved Ishihara test....  <br></br>
-                Data will be deleted... Send me an email if you would like to withdraw your information....
+                <p style={{width:"60%", display:"inline-block"}} >By participating in this test, you agree to having your
+                approximate age and birth gender recorded and stored for the duration 
+                of the spring semester of 2025 and used in my master thesis which will be publically available. It will be used for my master's thesis 
+                regarding testing people's color vision using an improved Ishihara test.... 
+                Send me an email to withdraw your information....
 
                 <br></br><br></br>
                 Contact me at <b>andelha@stud.ntnu.no</b> if you have any questions regarding the test.
@@ -879,66 +883,84 @@ function ColorTest() {
                 <i>-Anders Lunde Hagen</i>
                 </p>
 
-                <h3>
-                    Select your age range:   
-                </h3>
-                <div style={{display:"inline-block", textAlign:"right"}}>
-                    <label>Under 18<input name="age" type="radio"></input></label><br></br>
-                    <label>18-25<input name="age" type="radio"></input></label><br></br>
-                    <label>26-35<input name="age" type="radio"></input></label><br></br>
-                    <label>36-45<input name="age" type="radio"></input></label><br></br>
-                    <label>46-55<input name="age" type="radio"></input></label><br></br>
-                    <label>56-65<input name="age" type="radio"></input></label><br></br>
-                    <label>66-75<input name="age" type="radio"></input></label><br></br>
-                    <label>Over 75<input name="age" type="radio"></input></label><br></br>
-                    <label>No answer<input name="age" type="radio"></input></label>
-                </div>
+                <form>
+                <div className="containerRadio">
+                    <div className="radioDiv">
+                            <h3>
+                                Select your age range:   
+                            </h3>
+                        <div style={{display:"inline-block", textAlign:"right"}}>  
+                            <label>Under 18<input name="age" type="radio" onChange={(e) => userAge.current = "under 18"}></input></label><br></br>
+                            <label>18-25<input name="age" type="radio" onChange={(e) => userAge.current = "18-25"}></input></label><br></br>
+                            <label>26-35<input name="age" type="radio" onChange={(e) => userAge.current = "26-35"}></input></label><br></br>
+                            <label>36-45<input name="age" type="radio" onChange={(e) => userAge.current = "36-45"}></input></label><br></br>
+                            <label>46-55<input name="age" type="radio" onChange={(e) => userAge.current = "46-55"}></input></label><br></br>
+                            <label>56-65<input name="age" type="radio" onChange={(e) => userAge.current = "56-65"}></input></label><br></br>
+                            <label>66-75<input name="age" type="radio" onChange={(e) => userAge.current = "66-75"}></input></label><br></br>
+                            <label>Over 75<input name="age" type="radio" onChange={(e) => userAge.current = "over 75"} required></input></label><br></br>
+                            <label>No answer<input name="age" type="radio" onChange={(e) => userAge.current = "no answer"}></input></label>
+                        </div>
+                    </div>
 
-                <h3>
-                Select your gender at birth: <br></br>
-                (Reason: males have a considerably higher chance of being born with a color vision deficiency):
-                </h3>
-                <div style={{display:"inline-block", textAlign:"right"}}>
-                    <label>Male<input name="gender" type="radio"></input></label><br></br>
-                    <label>Female<input name="gender" type="radio"></input></label><br></br>
-                    <label>No answer<input name="gender" type="radio"></input></label><br></br>
+                    <div style={{flex:0.2, alignSelf:"center"}}>
+                        <h3>
+                            Start test
+                        </h3>
+                        <button type="submit" onClick={(e) => {
+                            
+                            // Check if the form is invalid 
+                            if (!e.target.closest("form").checkValidity()) {
+                                return;
+                            } 
+                            e.preventDefault();
+
+                            startTest.current = true
+                            //Hide start page
+                            startPage.current.style.display = "none";
+                            svgCircles.current.style.display = "block";
+                            wrapper.current.style.display = "none";
+
+                            //Start plate timers
+                            startPlateTime.current = Date.now();
+                            startTotalTime.current = Date.now();
+
+                            //Spam timer
+                            lastClick.current = Date.now();
+
+                            startAfkTimer();
+
+                        }}>Start</button>
+                    </div>
+
+                    <div className="radioDiv">
+                        <h3>
+                            Select your gender at birth: <br></br>
+                            (Why do I ask for this? <br></br>
+                            Males have a considerably higher chance of being born <br></br> with a color vision deficiency):
+                        </h3>
+                        <div style={{display:"inline-block", textAlign:"right"}}>
+                            <label>Male<input name="gender" type="radio" onChange={() => userGender.current = "male"}></input></label><br></br>
+                            <label>Female<input name="gender" type="radio" onChange={() => userGender.current = "female"} required></input></label><br></br>
+                            <label>No answer<input name="gender" type="radio" onChange={() => userGender.current = "no answer"}></input></label><br></br>
+                        </div>
+                    </div>
                 </div>
+                </form>
 
                 <h3> How to do the test: </h3>
-                <p>
-                    Once you click the start button, multiple color tests will <br></br>
-                    appear one at a time, with either a lowercase letter or a number. <br></br>
-                    Your task is to press the corresponding key on the keyboard of <br></br>
-                    this laptop as they appear. The test will go through several different <br></br>
+                <p style={{width:"40%", display:"inline-block"}}>
+                    Once you click the start button, multiple color tests will
+                    appear one at a time, with either a lowercase letter or a number.
+                    Your task is to press the corresponding key on the keyboard of 
+                    this laptop as they appear. The test will go through several different
                     types of tests as you progress. 
                     <br></br><br></br>
-                    At the end of the test, you will be given how many <br></br>
-                    correct and incorrect answers you got. There will be about 80 <br></br> 
+                    At the end of the test, you will be given how many 
+                    correct and incorrect answers you got. There will be about 80
                     Ishihara plates and will take about 4 minutes to finish. 
 
                      
                 </p>
-                
-                <h3>
-                    Start test
-                </h3>
-                <button onClick={() => {
-                    startTest.current = true
-                    //Hide start page
-                    startPage.current.style.display = "none";
-                    svgCircles.current.style.display = "block";
-                    wrapper.current.style.display = "none";
-
-                    //Start plate timers
-                    startPlateTime.current = Date.now();
-                    startTotalTime.current = Date.now();
-
-                    //Spam timer
-                    lastClick.current = Date.now();
-
-                    startAfkTimer();
-
-                    }}>Start</button>
 
             </div>
             <div ref={endPage} style={{display:"none"}} className="endPage">

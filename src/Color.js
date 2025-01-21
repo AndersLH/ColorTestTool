@@ -310,7 +310,7 @@ function Color({  srgbValue,
 
     //If out of boundary, use recursion until it is
     while(!isPointInTriangle(dot.x,dot.y)){
-      t += 0.06;
+      t += 0.02;
       dot = mathInter(x1,y1,x2,y2,t, j);
 
       //Prevent infinite loop

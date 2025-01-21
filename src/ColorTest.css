@@ -1,5 +1,5 @@
 .startPage{
-    margin:50px;
+    margin:20px;
     text-align: center;
 }
 
@@ -8,9 +8,37 @@
     text-align: center;
 }
 
+.containerRadio{
+    display: flex;
+    width: 100%;
+}
+
+.radioDiv {
+    flex: 1;
+    padding: 20px; 
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+/* Rainbow shadow for title :D */
+@keyframes rainbow {
+    0% { text-shadow: 0 0 8px red; }
+    14% { text-shadow: 0 0 8px orange; }
+    28% { text-shadow: 0 0 8px yellow; }
+    42% { text-shadow: 0 0 8px green; }
+    57% { text-shadow: 0 0 8px blue; }
+    71% { text-shadow: 0 0 8px indigo; }
+    85% { text-shadow: 0 0 8px violet; }
+    100% { text-shadow: 0 0 8px red; }
+  }
+  
+  .rainbowText {
+    animation: rainbow 10s infinite;
+  }
+
 /* Default button styling */
 button {
-    background-color: #0f4300;
+    background-color: #1f7907;
     color: white;
     border: 1px solid black;
     border-radius: 5px;

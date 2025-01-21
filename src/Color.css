@@ -3,7 +3,7 @@ table, th, td {
   }
 
   body{
-    background-color: grey;
+    background-color: rgb(136, 136, 136);
   }
   .fillColorsClass{
     display:none;
