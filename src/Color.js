@@ -10,8 +10,13 @@ function xyy2xyz(x, y, Y) {
   x = con.x;
   y = con.y;
 
+  // console.log("xy:",x,y);
+
   const X = (x * Y) / y;
   const Z = (Y * (1.0 - x - y)) / y;
+
+  // console.log("lab:",xyz2lab([X,Y,Z]));
+
   return [X, Y, Z];
 }
 
@@ -44,10 +49,17 @@ function xyz2srgb(XYZ) {
     [0.0556, -0.2040, 1.0570],
   ];
 
+
   //Apply transformation
   const sRGB = M.map(row =>
     row.reduce((sum, value, i) => sum + value * (XYZ[i] / 100), 0)
   );
+
+  
+  console.log("lRGB:",sRGB);
+  if(sRGB[0] < 0 || sRGB[0] > 1 || sRGB[1] < 0 || sRGB[1] > 1 || sRGB[2] < 0 || sRGB[2] > 1){ 
+    return sRGB;
+  }
 
   //Gamma correction and scaling
   const gammaCorrect = (value) =>
@@ -55,8 +67,12 @@ function xyz2srgb(XYZ) {
       ? value * 12.92
       : 1.055 * Math.pow(value, 1 / 2.4) - 0.055;
 
-  const [sR, sG, sB] = sRGB.map((value) =>
-    Math.max(0, Math.min(255, gammaCorrect(value) * 255))
+      //Make an unrestricted dupe of this and make it an if check 
+
+      const [sR, sG, sB] = sRGB.map((value) =>
+        // console.log("unresRGB:",gammaCorrect(value) * 255);
+        // return Math.max(0, Math.min(255, gammaCorrect(value) * 255))
+        Math.max(0, gammaCorrect(value) * 255)
   );
 
   return [Math.round(sR), Math.round(sG), Math.round(sB)];
@@ -64,11 +80,62 @@ function xyz2srgb(XYZ) {
 
 //Combined function to convert xyY to sRGB
 function xyy2srgb(x, y, Y) {
-  const XYZ = xyy2xyz(x, y, Y);
+  let XYZ = xyy2xyz(x, y, Y);
+  let sRGB = xyz2srgb(XYZ); 
+
+  // console.log("Before:",sRGB[0],sRGB[1],sRGB[2],Y);
+
+  //Check for valid sRGB values, if not valid reduce brightness until it is
+  while((sRGB[0] > 0 && sRGB[0] < 1) || (sRGB[1] > 0 && sRGB[1] < 1) || (sRGB[2] > 0 && sRGB[2] < 1)){
+    Y -= 1; 
+    XYZ = xyy2xyz(x, y, Y);
+    sRGB = xyz2srgb(XYZ);       
+  }
+  console.log("Final sRGB:",sRGB[0],sRGB[1],sRGB[2],Y);
+  
   return xyz2srgb(XYZ);
 }
 
 
+
+// // XYZ to Lab conversion function
+// function xyz2lab(XYZ, XYZn = [95.047, 100.000, 108.883]) {
+//   // If no reference white is provided, D65 is used by default.
+//   const Xn = XYZn[0];
+//   const Yn = XYZn[1];
+//   const Zn = XYZn[2];
+
+//   // Extract X, Y, Z values from input
+//   const X = XYZ[0];
+//   const Y = XYZ[1];
+//   const Z = XYZ[2];
+
+//   // Precompute constant for knee function
+//   const constKnee = Math.pow(24 / 116, 3);
+
+//   // Normalize to reference white
+//   const Yrel = Y / Yn;
+//   const Xrel = X / Xn;
+//   const Zrel = Z / Zn;
+
+//   // Apply cube root
+//   let fY = Math.cbrt(Yrel);
+//   let fX = Math.cbrt(Xrel);
+//   let fZ = Math.cbrt(Zrel);
+
+//   // Handle T/Tn <= (24/116)^3
+//   if (Yrel <= constKnee) fY = (841 / 108) * Yrel + 16 / 116;
+//   if (Xrel <= constKnee) fX = (841 / 108) * Xrel + 16 / 116;
+//   if (Zrel <= constKnee) fZ = (841 / 108) * Zrel + 16 / 116;
+
+//   // Calculate L, a, b
+//   const L = 116 * fY - 16;
+//   const a = 500 * (fX - fY);
+//   const b = 200 * (fY - fZ);
+
+//   // Return Lab as an array
+//   return [L, a, b];
+// }
 
 
 
@@ -685,9 +752,7 @@ function Color({  srgbValue,
           x={`${10 + clickPosition.x * 0.8}%`}
           y={`${11.7 + clickPosition.y * 0.8}%`}
         >
-          x: {(clickPosition.x / 100).toFixed(3)}, 
-          y: {(1-(clickPosition.y / 100)).toFixed(3)}, 
-          sRGB: {calcSRGBClick()[0]+", "+ calcSRGBClick()[1] + ", " + calcSRGBClick()[2]}
+          x
         </text>
         )}
 

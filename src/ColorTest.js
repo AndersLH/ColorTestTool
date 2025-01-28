@@ -122,7 +122,7 @@ function ColorTest() {
     let currentClick = useRef(null);
 
     //AFK timer
-    const timeoutAfk = useRef(10000);
+    const timeoutAfk = useRef(1000000);
     let afkTimer = useRef(false);
 
     //End screen timer
