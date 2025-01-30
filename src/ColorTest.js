@@ -105,7 +105,7 @@ function ColorTest() {
     let [globalCurrentType] = useState("Circle"); // Current type of figure to be drawn
     let [globalNumColors] = useState(3); // How many colors on motive and background(each)
     let [globalNumSpecialColors] = useState(1); // How many background colors (always 1)
-    let [numConfusionLines] = useState(1); // How many confusion lines
+    let [numConfusionLines] = useState(2); // How many confusion lines
     let currentBrightness = useRef(100);
 
     //Track time

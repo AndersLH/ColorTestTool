@@ -10,12 +10,10 @@ function xyy2xyz(x, y, Y) {
   x = con.x;
   y = con.y;
 
-  // console.log("xy:",x,y);
+  console.log("xy:",x,y);
 
   const X = (x * Y) / y;
   const Z = (Y * (1.0 - x - y)) / y;
-
-  // console.log("lab:",xyz2lab([X,Y,Z]));
 
   return [X, Y, Z];
 }
@@ -56,7 +54,7 @@ function xyz2srgb(XYZ) {
   );
 
   
-  console.log("lRGB:",sRGB);
+  // console.log("lRGB:",sRGB);
   if(sRGB[0] < 0 || sRGB[0] > 1 || sRGB[1] < 0 || sRGB[1] > 1 || sRGB[2] < 0 || sRGB[2] > 1){ 
     return sRGB;
   }
@@ -91,89 +89,12 @@ function xyy2srgb(x, y, Y) {
     XYZ = xyy2xyz(x, y, Y);
     sRGB = xyz2srgb(XYZ);       
   }
-  console.log("Final sRGB:",sRGB[0],sRGB[1],sRGB[2],Y);
+
+  // console.log("Final sRGB:",sRGB[0],sRGB[1],sRGB[2],Y);
+  console.log("FinalY:",Y);
   
-  return xyz2srgb(XYZ);
+  return {a:xyz2srgb(XYZ),b:Y};
 }
-
-
-
-// // XYZ to Lab conversion function
-// function xyz2lab(XYZ, XYZn = [95.047, 100.000, 108.883]) {
-//   // If no reference white is provided, D65 is used by default.
-//   const Xn = XYZn[0];
-//   const Yn = XYZn[1];
-//   const Zn = XYZn[2];
-
-//   // Extract X, Y, Z values from input
-//   const X = XYZ[0];
-//   const Y = XYZ[1];
-//   const Z = XYZ[2];
-
-//   // Precompute constant for knee function
-//   const constKnee = Math.pow(24 / 116, 3);
-
-//   // Normalize to reference white
-//   const Yrel = Y / Yn;
-//   const Xrel = X / Xn;
-//   const Zrel = Z / Zn;
-
-//   // Apply cube root
-//   let fY = Math.cbrt(Yrel);
-//   let fX = Math.cbrt(Xrel);
-//   let fZ = Math.cbrt(Zrel);
-
-//   // Handle T/Tn <= (24/116)^3
-//   if (Yrel <= constKnee) fY = (841 / 108) * Yrel + 16 / 116;
-//   if (Xrel <= constKnee) fX = (841 / 108) * Xrel + 16 / 116;
-//   if (Zrel <= constKnee) fZ = (841 / 108) * Zrel + 16 / 116;
-
-//   // Calculate L, a, b
-//   const L = 116 * fY - 16;
-//   const a = 500 * (fX - fY);
-//   const b = 200 * (fY - fZ);
-
-//   // Return Lab as an array
-//   return [L, a, b];
-// }
-
-
-
-
-
-//Convert xyz back to uvp for checking if conversations are correct
-//AI converted code from Matlab
-// function xyz2uvp(XYZ) {
-//   const [X, Y, Z] = XYZ;
-
-//   const denominator = X + 15 * Y + 3 * Z;
-
-//   if (denominator === 0) {
-//       return [0, 0]; 
-//   }
-
-//   // Calculate u' and v' chromaticity coordinates
-//   const up = (4 * X) / denominator;
-//   const vp = (9 * Y) / denominator;
-
-//   return [up, vp];
-// }
-
-// // Example usage:
-
-// let up = 0.24;
-// let vp = 0.5;
-
-
-
-// const XYZ = xyy2xyz(newx,newy,100); // Replace with your input XYZ values
-// const colorOm = xyy2srgb(newx,newy,100);
-// const uvp = xyz2uvp(XYZ);
-
-// console.log(XYZ);
-// console.log("u':", uvp[0], "v':", uvp[1]);
-// console.log(colorOm);
-
 
 //List of confusion lines to perserve lines on DOM update
 let cfList = [];
@@ -195,8 +116,15 @@ function Color({  srgbValue,
   //Click coordinates
   const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
   //Slider for brightness setting
-  const [sliderBright, setSliderBright] = useState(currentBrightness);
+  let [sliderBright, setSliderBright] = useState(100);
   let [listColors,setListColors] = useState(currentColorType);
+
+  //Default to 100 brightness on all confusion lines
+  let maxBrightConfusion = useRef([]);
+  for(let i = 0; i < numConfusionLines+1; i++){
+    maxBrightConfusion.current[i] = 100;
+  }
+
 
 
   //Coordinates for white point D65
@@ -252,9 +180,33 @@ function Color({  srgbValue,
   }
 
   //Calculate sRGB values from x,y coordinates and slider brightness
-  function calcSRGB(x,y){
+  function calcSRGB(x,y, conLine){
     y = 100-y; //Inverted y-axis in web
-    return xyy2srgb((x / 100), (1-(y / 100)), sliderBright);
+
+    
+    let srgb = xyy2srgb((x / 100), (1-(y / 100)), maxBrightConfusion.current[conLine]); //sliderBright old param
+    // console.log("confusionLine:",conLine, srgb.a, srgb.b);
+
+
+
+    if(listConfusionColors.current.length === globalNumColors ){
+      console.log("InIf",listConfusionColors.current.length);
+      listConfusionColors.current[listConfusionColors.current.length+1] = 1;
+
+      listConfusionColors.current = [];
+      for (let m = 0; m < globalNumColors; m++){
+          listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${listConfusionCoords.current-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${listConfusionCoords.current-1}-line-${m}-dot`).getAttribute("data-coord-y")*100, listConfusionCoords.current-1)));
+      }
+      srgbValue(listConfusionColors.current);
+
+    }
+
+
+
+    //Set the lowest brightness to all confusion line dots
+    maxBrightConfusion.current[conLine] = srgb.b;
+
+    return srgb.a;
   }
 
   //Convert an array of RGB to a hex value
@@ -265,7 +217,7 @@ function Color({  srgbValue,
 
   // //SRGB functino based on cursor click, old implementation for early testing
   function calcSRGBClick(){
-    return xyy2srgb((clickPosition.x / 100), (1-(clickPosition.y / 100)), sliderBright);
+    return xyy2srgb((clickPosition.x / 100), (1-(clickPosition.y / 100)), sliderBright, 0).a;
   }
 
   //Ref initialization
@@ -287,7 +239,6 @@ function Color({  srgbValue,
     setClickPosition({ x: gridX, y: gridY });
     
     //Pass sRGB values to parent manually, due to delayed useState update
-    // srgbValue(xyy2srgb((gridX / 100).toFixed(3), (1-(gridY / 100)).toFixed(3), sliderBright)); 
     srgbValue(listConfusionColors.current);
 
   };
@@ -528,9 +479,9 @@ function Color({  srgbValue,
                         }
                         //Get color of each point in this confusion line
                         for (let m = 0; m < globalNumColors; m++){
-                          listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
-                          //mix colors TODO
-                          // listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${Math.floor(Math.random() * numConfusionLines)}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${Math.floor(Math.random() * numConfusionLines)}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
+                          listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-y")*100, j)));
+                          // calcSRGB(document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-y")*100, j);
+                          console.log("reach:",listConfusionColors.current);
                           listConfusionCoords.current = j;
                         }
                         document.getElementById(`${j-1}-line`).style.strokeWidth = 4;
@@ -546,7 +497,7 @@ function Color({  srgbValue,
                       //If-check to make sure the element is loaded in. Calculate color and set cell to be the color of the correspoding confusion dot
                       <th key={j + "dot"} style={{backgroundColor: 
                         document.getElementById(`${j-1}-line-${i-1}-dot`) 
-                        ? srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-y")*100)) 
+                        ? srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-y")*100, j)) 
                         : "grey" }}></th>
                     )
                   ) 
@@ -559,15 +510,19 @@ function Color({  srgbValue,
         </tbody>
       </table>
       <label>Brightness: 
-        <input type="range" min="0" max="100" value={sliderBright} onMouseUp={() => {
+        <input type="range" min="0" max="100" value={sliderBright} id="briSlide" onMouseUp={() => {
           if(listConfusionCoords.current === null){
             return;
           }
+          console.log(listConfusionColors.current);
           listConfusionColors.current = [];
           for (let m = 0; m < globalNumColors; m++){
-              listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${listConfusionCoords.current-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${listConfusionCoords.current-1}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
+              listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${listConfusionCoords.current-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${listConfusionCoords.current-1}-line-${m}-dot`).getAttribute("data-coord-y")*100, listConfusionCoords.current-1)));
             }
-            srgbValue(listConfusionColors.current);}} 
+            srgbValue(listConfusionColors.current);
+            console.log(listConfusionColors.current);
+          }
+          } 
           onChange={(e) => {
           changeBrightness(e); 
           }}></input>
