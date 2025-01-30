@@ -10,7 +10,7 @@ function xyy2xyz(x, y, Y) {
   x = con.x;
   y = con.y;
 
-  console.log("xy:",x,y);
+  // console.log("xy:",x,y);
 
   const X = (x * Y) / y;
   const Z = (Y * (1.0 - x - y)) / y;
@@ -91,7 +91,7 @@ function xyy2srgb(x, y, Y) {
   }
 
   // console.log("Final sRGB:",sRGB[0],sRGB[1],sRGB[2],Y);
-  console.log("FinalY:",Y);
+  console.log("xy:",uv2xy(x,y),"FinalY:",Y);
   
   return {a:xyz2srgb(XYZ),b:Y};
 }
@@ -183,11 +183,8 @@ function Color({  srgbValue,
   function calcSRGB(x,y, conLine){
     y = 100-y; //Inverted y-axis in web
 
-    
     let srgb = xyy2srgb((x / 100), (1-(y / 100)), maxBrightConfusion.current[conLine]); //sliderBright old param
     // console.log("confusionLine:",conLine, srgb.a, srgb.b);
-
-
 
     if(listConfusionColors.current.length === globalNumColors ){
       console.log("InIf",listConfusionColors.current.length);
@@ -480,8 +477,15 @@ function Color({  srgbValue,
                         //Get color of each point in this confusion line
                         for (let m = 0; m < globalNumColors; m++){
                           listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-y")*100, j)));
-                          // calcSRGB(document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-y")*100, j);
-                          console.log("reach:",listConfusionColors.current);
+                          listConfusionCoords.current = j;
+                        }
+                        document.getElementById(`${j-1}-line`).style.strokeWidth = 4;
+    
+                        srgbValue(listConfusionColors.current);
+
+                        //Duplicate to update the brightness of the colors, temporary fix but works well
+                        for (let m = 0; m < globalNumColors; m++){
+                          listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
                           listConfusionCoords.current = j;
                         }
                         document.getElementById(`${j-1}-line`).style.strokeWidth = 4;
@@ -514,13 +518,11 @@ function Color({  srgbValue,
           if(listConfusionCoords.current === null){
             return;
           }
-          console.log(listConfusionColors.current);
           listConfusionColors.current = [];
           for (let m = 0; m < globalNumColors; m++){
               listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${listConfusionCoords.current-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${listConfusionCoords.current-1}-line-${m}-dot`).getAttribute("data-coord-y")*100, listConfusionCoords.current-1)));
             }
             srgbValue(listConfusionColors.current);
-            console.log(listConfusionColors.current);
           }
           } 
           onChange={(e) => {
