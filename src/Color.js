@@ -322,6 +322,7 @@ function Color({  srgbValue,
 
     //Interpolate functions
     let dot = mathInter(x1, y1, x2, y2, t, j);
+    let originalDot = mathInter(x1, y1, x2, y2, t, j);
 
     //If out of boundary, use recursion until it is
     while(!isPointInTriangle(dot.x,dot.y)){
@@ -377,6 +378,11 @@ function Color({  srgbValue,
     //Add how far the dot will move out based on noise with the angle + skew
     dot.x += noise * Math.cos(angle + skew);
     dot.y += noise * Math.sin(angle + skew);
+
+    //If the noise is outside, revert changes
+    if(!isPointInTriangle(dot.x,dot.y)){
+      dot = originalDot;
+    }
 
     addConfusionDots(dot, i, j);
   
