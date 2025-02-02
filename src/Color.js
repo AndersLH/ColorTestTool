@@ -53,8 +53,7 @@ function xyz2srgb(XYZ) {
     row.reduce((sum, value, i) => sum + value * (XYZ[i] / 100), 0)
   );
 
-  
-  // console.log("lRGB:",sRGB);
+  //If outside of linear RGB gamut
   if(sRGB[0] < 0 || sRGB[0] > 1 || sRGB[1] < 0 || sRGB[1] > 1 || sRGB[2] < 0 || sRGB[2] > 1){ 
     return sRGB;
   }
@@ -68,8 +67,6 @@ function xyz2srgb(XYZ) {
       //Make an unrestricted dupe of this and make it an if check 
 
       const [sR, sG, sB] = sRGB.map((value) =>
-        // console.log("unresRGB:",gammaCorrect(value) * 255);
-        // return Math.max(0, Math.min(255, gammaCorrect(value) * 255))
         Math.max(0, gammaCorrect(value) * 255)
   );
 
@@ -81,8 +78,6 @@ function xyy2srgb(x, y, Y) {
   let XYZ = xyy2xyz(x, y, Y);
   let sRGB = xyz2srgb(XYZ); 
 
-  // console.log("Before:",sRGB[0],sRGB[1],sRGB[2],Y);
-
   //Check for valid sRGB values, if not valid reduce brightness until it is
   while((sRGB[0] > 0 && sRGB[0] < 1) || (sRGB[1] > 0 && sRGB[1] < 1) || (sRGB[2] > 0 && sRGB[2] < 1)){
     Y -= 1; 
@@ -90,8 +85,7 @@ function xyy2srgb(x, y, Y) {
     sRGB = xyz2srgb(XYZ);       
   }
 
-  // console.log("Final sRGB:",sRGB[0],sRGB[1],sRGB[2],Y);
-  console.log("xy:",uv2xy(x,y),"FinalY:",Y);
+  // console.log("xy:",uv2xy(x,y),"FinalY:",Y);
   
   return {a:xyz2srgb(XYZ),b:Y};
 }
@@ -187,7 +181,6 @@ function Color({  srgbValue,
     // console.log("confusionLine:",conLine, srgb.a, srgb.b);
 
     if(listConfusionColors.current.length === globalNumColors ){
-      console.log("InIf",listConfusionColors.current.length);
       listConfusionColors.current[listConfusionColors.current.length+1] = 1;
 
       listConfusionColors.current = [];

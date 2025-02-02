@@ -306,7 +306,7 @@ function ColorTest() {
             } else if(globalCurrentType === "Square"){
                 figure = document.createElementNS(svg.namespaceURI, "rect");
             } else {
-                figure = document.createElementNS(svg.namespaceURI, "ellipse");
+                figure = document.createElementNS(svg.namespaceURI, "polygon");
             }
             
             // Need this to make Ring element information
@@ -331,18 +331,38 @@ function ColorTest() {
                     (Number(figure.getAttribute("y")) + Number(figure.getAttribute("height")) / 2) + ")");
             } else if (globalCurrentType === "Square") {
                 let size = ((figures.current[i].r + globalRadiusChange) < 1 ? 0 : (figures.current[i].r + globalRadiusChange)) * 10;
-                figure.setAttribute("x", figures.current[i].x * 9.7);
+                figure.setAttribute("x", figures.current[i].x * 9.9);
                 figure.setAttribute("y", figures.current[i].y * 9.8); 
                 figure.setAttribute("width", size); 
                 figure.setAttribute("height", size); 
                 figure.setAttribute("transform", "rotate(" + figures.current[i].angle * 180 / Math.PI + "," +
                     (Number(figure.getAttribute("x")) + size / 2) + "," + 
                     (Number(figure.getAttribute("y")) + size / 2) + ")");
-            } else { //ellipse
-                figure.setAttribute("rx", ((figures.current[i].r + globalRadiusChange) < 1 ? 0 : (figures.current[i].r + globalRadiusChange) * 9.8));
-                figure.setAttribute("ry", ((figures.current[i].r / 2 + globalRadiusChange / 2) < 1 ? 0 : (figures.current[i].r / 2 + globalRadiusChange / 2)) * 10);
-                figure.setAttribute("transform", "rotate(" + figures.current[i].angle * 180 / Math.PI + "," + (Number(figure.getAttribute("cx")) + Number(figure.getAttribute("rx")) / 2) + "," + (Number(figure.getAttribute("cy")) + Number(figure.getAttribute("ry")) / 2) + ")");
+            } else {
+                let size = ((figures.current[i].r + globalRadiusChange) < 1 ? 0 : (figures.current[i].r + globalRadiusChange)) * 10.5;
+                let x = figures.current[i].x * 10;
+                let y = figures.current[i].y * 10;
+                let angle = figures.current[i].angle * 180 / Math.PI;
+
+                //triangle points
+                let x1 = x;
+                let y1 = y - size / Math.sqrt(3);
+                let x2 = x - size / 2;
+                let y2 = y + size / (2 * Math.sqrt(3));
+                let x3 = x + size / 2;
+                let y3 = y + size / (2 * Math.sqrt(3));
+
+                figure.setAttribute("points", `${x1},${y1} ${x2},${y2} ${x3},${y3}`);
+                //randomize triangle rotation
+                figure.setAttribute("transform", `rotate(${angle}, ${x}, ${y})`);
             }
+
+            //unused
+            // { //ellipse
+            //     figure.setAttribute("rx", ((figures.current[i].r + globalRadiusChange) < 1 ? 0 : (figures.current[i].r + globalRadiusChange) * 9.8));
+            //     figure.setAttribute("ry", ((figures.current[i].r / 2 + globalRadiusChange / 2) < 1 ? 0 : (figures.current[i].r / 2 + globalRadiusChange / 2)) * 10);
+            //     figure.setAttribute("transform", "rotate(" + figures.current[i].angle * 180 / Math.PI + "," + (Number(figure.getAttribute("cx")) + Number(figure.getAttribute("rx")) / 2) + "," + (Number(figure.getAttribute("cy")) + Number(figure.getAttribute("ry")) / 2) + ")");
+            // }
             
             if (globalBorder) {
                 figure.setAttribute("stroke", "black");
@@ -654,7 +674,7 @@ function ColorTest() {
 
                 //Check for correct press or maxed out parameters
                 if( motive.current.value === key || 
-                    globalRadiusChange > 3 || 
+                    (globalRadiusChange > 3 && activeTest.current === "size") || 
                     globalBorder || 
                     noiseLevel.current > 0.01 || 
                     (currentBrightness.current > 80 && activeTest.current === "brightness") || 
@@ -751,8 +771,8 @@ function ColorTest() {
 
                 if(activeTest.current === "shape"){
                     // eslint-disable-next-line
-                    globalCurrentType = "Ellipse";
-                    globalRadiusChange = 3;
+                    globalCurrentType = "Triangle";
+                    globalRadiusChange = 6;
                 }
 
                 //Reached final test
@@ -762,9 +782,9 @@ function ColorTest() {
                         case "noise": activeTest.current = "size"; recieveColor("protan"); recieveRadio(1); break;
                         case "size": activeTest.current = "border"; recieveColor("protan"); recieveRadio(1); break;
                         case "border": activeTest.current = "background"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#BFBFBF"; break;
-                        case "background": activeTest.current = "shape"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#FFFFFF";  globalCurrentType = "Ellipse"; globalRadiusChange = 3; break;
-                        case "shape": activeTest.current = "brightness"; recieveColor("protan"); recieveRadio(1); globalCurrentType = "Circle"; currentBrightness.current = 20; globalRadiusChange = 0; break;
-                        case "brightness": fullReset(); currentBrightness.current = 100; break;
+                        case "background": activeTest.current = "shape"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#FFFFFF";  globalCurrentType = "Triangle"; globalRadiusChange = 6; break;
+                        case "shape": activeTest.current = "brightness"; recieveColor("protan"); recieveRadio(1); globalCurrentType = "Circle"; globalRadiusChange = 0; currentBrightness.current = 20; break;
+                        case "brightness": fullReset(); break; //currentBrightness.current = 100; break;
                         default: break;
                     }
                 } else if(currentRadio === numConfusionLines){ //Reached final confusion line
@@ -817,12 +837,14 @@ function ColorTest() {
                     backgroundColor.current = `#${colorHex}`;
                 }
                 if(activeTest.current === "shape"){
+                    console.log("inchange", globalCurrentType);
                     globalRadiusChange = 3;
-                    switch(globalCurrentType){
-                        case "Ellipse": globalCurrentType = "Rect"; break;
-                        case "Rect": globalCurrentType = "Square"; break;
-                        default: break;
-                    }
+                    globalCurrentType = "Square";
+
+                    // switch(globalCurrentType){
+                    //     case "Triangle": console.log("change");globalCurrentType = "Square"; globalRadiusChange = 4; break;
+                    //     default: break;
+                    // }
                 }
             }
             //Re-render color test
@@ -1000,6 +1022,7 @@ function ColorTest() {
                     <option value="border">Border</option>
                     <option value="brightness">Brightness</option>
                     <option value="background">Background Color</option>
+                    <option value="shape">Shape</option>
                 </select>
                 <div ref={controls}>
                     <fieldset style={{width: "20%", float: "left"}}>
@@ -1007,7 +1030,7 @@ function ColorTest() {
                         <label>Choose a figure:</label>
                         <select onChange={(e) => {globalCurrentType = e.target.value;}}>
                             <option value="Circle" defaultValue={"Circle"}>Circles</option>
-                            <option value="Ellipse">Ellipses</option>
+                            <option value="Triangle">Triangles</option>
                             <option value="Rect">Rectangle</option>
                             <option value="Square">Square</option>
                             <option value="Ring">Rings</option>
