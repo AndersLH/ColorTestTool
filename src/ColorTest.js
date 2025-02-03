@@ -107,6 +107,7 @@ function ColorTest() {
     let [globalNumSpecialColors] = useState(1); // How many background colors (always 1)
     let [numConfusionLines] = useState(2); // How many confusion lines
     let currentBrightness = useRef(100);
+    let noiseColor = useRef(false);
 
     //Track time
     let startPlateTime = useRef(null);
@@ -233,11 +234,21 @@ function ColorTest() {
     function setColor() { // Gives colors to figures generated
         if (currentMotive.current) {                                        // If a motive is set
             for (let i = 0; i < figures.current.length; i++) {              // Go through all circles
-                let rnd = Math.random() * globalNumColors | 0;      // Random color number
+                let rnd = Math.random() * (globalNumColors) | 0;      // Random color number
+                let rnd2 = Math.random() * (globalNumColors+1) | 0;      // Random color number
                 if (currentMotive.current[(figures.current[i].y / (plate.current.getAttribute("height") / motiveH)) | 0] // Is Circle within motive?
                 [(figures.current[i].x / (plate.current.getAttribute("width") / motiveW) | 0)])
-                figures.current[i].fill = "fil" + rnd;
-                else figures.current[i].fill = "fil" + (rnd + globalNumColors);
+                figures.current[i].fill = "fil" + rnd; 
+                else{
+                    //Add a motive color into background as noise
+                    if(activeTest.current === "noiseColor"){
+                        figures.current[i].fill = "fil" + (Math.random() < 0.5 ? (rnd2 + globalNumColors - 1) : (rnd + globalNumColors));
+                    } else {
+                        figures.current[i].fill = "fil" + (rnd + globalNumColors); //
+                    }
+
+                } 
+
             }
         }
     }
@@ -677,6 +688,7 @@ function ColorTest() {
                     (globalRadiusChange > 3 && activeTest.current === "size") || 
                     globalBorder || 
                     noiseLevel.current > 0.01 || 
+                    noiseColor.current ||
                     (currentBrightness.current > 80 && activeTest.current === "brightness") || 
                     (backgroundColor.current === "#000000" && activeTest.current === "background") || 
                     globalCurrentType === "Square"){
@@ -713,13 +725,17 @@ function ColorTest() {
                 UserKey: key, 
                 CorrectPress: motive.current.value === key ? "yes" : "no", 
                 NoiseLevel: activeTest.current === "noise" ? noiseLevel.current : "",
+                NoiseColor: activeTest.current === "noiseColor" ? "true" : "",
                 CircleSize: activeTest.current === "size" ? globalRadiusChange : "",
-                Border: activeTest.current === "border" ? globalBorder ? "yes" : "no" : "",
+                Border: activeTest.current === "border" ? globalBorder ? "true" : "false" : "",
                 Brightness: currentBrightness.current,
                 BackgroundColor: activeTest.current === "background" ? backgroundColor.current : "",  
                 Shape: globalCurrentType,
                 TimeSpentPlate: plateTime.current,
                 ColorDeficiency: currentColorType,
+                NumberOfConfusionLines: numConfusionLines,
+                ConfusionLine: currentRadio,
+                NumberOfColors: globalNumColors*2,
                 sRGB: listColorString,
             });
 
@@ -758,6 +774,9 @@ function ColorTest() {
                 globalRadiusChange = 0;
                 //eslint-disable-next-line
                 globalBorder = false;
+                //eslint-disable-next-line
+                noiseColor.current = false;
+
 
                 //Background color parameter reset
                 if(activeTest.current === "background"){
@@ -779,7 +798,8 @@ function ColorTest() {
                 if(currentRadio === numConfusionLines && currentColorType === "tritan"){
                     //Change parameter or finish test if all parameters are done
                     switch(activeTest.current){
-                        case "noise": activeTest.current = "size"; recieveColor("protan"); recieveRadio(1); break;
+                        case "noise": activeTest.current = "noiseColor"; recieveColor("protan"); recieveRadio(1); break;
+                        case "noiseColor": activeTest.current = "size"; recieveColor("protan"); recieveRadio(1); break;
                         case "size": activeTest.current = "border"; recieveColor("protan"); recieveRadio(1); break;
                         case "border": activeTest.current = "background"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#BFBFBF"; break;
                         case "background": activeTest.current = "shape"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#FFFFFF";  globalCurrentType = "Triangle"; globalRadiusChange = 6; break;
@@ -813,8 +833,12 @@ function ColorTest() {
 
             } else {
                 //Change parameters after incorrect motive input
+                //Make switch case
                 if(activeTest.current === "noise"){
                     noiseLevel.current += 0.003;
+                }
+                if(activeTest.current === "noiseColor"){
+                    noiseColor.current = true;
                 }
                 if(activeTest.current === "size"){
                     globalRadiusChange++;
@@ -981,6 +1005,16 @@ function ColorTest() {
                     correct and incorrect answers you got. There will be about 80
                     Ishihara plates and will take about 4 minutes to finish. 
 
+                    Det trengs imidlertid ikke samtykke som juridisk behandlingsgrunnlag, 
+                    da det ikke behandles personopplysninger. Dermed skal det heller ikke 
+                    stå noe om innsyn, retting eller rett til å trekke samtykket i informasjonen som gis. 
+                    I stedet kan det for eksempel stå at datainnsamlingen er anonym, og at en ved å
+                    gjennomføre undersøkelsen anses å ha samtykket. Det skal IKKE være noen signatur eller 
+                    lignende som kan identifisere deltakeren. Det skal heller ikke stå noe om at datamaterialet skal
+                    behandles konfidensielt dersom dette ikke er tilfellet. Dersom datamaterialet skal deles
+                    eller publiseres i ettertid, for eksempel i et åpent dataarkiv, skal du likevel gjøre 
+                    oppmerksom på det.
+
                      
                 </p>
 
@@ -1018,6 +1052,7 @@ function ColorTest() {
                     drawSVG();
                 }}>
                     <option value="noise">Noise</option>
+                    <option value="noiseColor">NoiseColor</option>
                     <option value="size">Size</option>
                     <option value="border">Border</option>
                     <option value="brightness">Brightness</option>

@@ -177,7 +177,7 @@ function Color({  srgbValue,
   function calcSRGB(x,y, conLine){
     y = 100-y; //Inverted y-axis in web
 
-    let srgb = xyy2srgb((x / 100), (1-(y / 100)), maxBrightConfusion.current[conLine]); //sliderBright old param
+    let srgb = xyy2srgb((x / 100), (1-(y / 100)), maxBrightConfusion.current[conLine]); //sliderBright old parameter
     // console.log("confusionLine:",conLine, srgb.a, srgb.b);
 
     if(listConfusionColors.current.length === globalNumColors ){
@@ -500,7 +500,7 @@ function Color({  srgbValue,
                       //If-check to make sure the element is loaded in. Calculate color and set cell to be the color of the correspoding confusion dot
                       <th key={j + "dot"} style={{backgroundColor: 
                         document.getElementById(`${j-1}-line-${i-1}-dot`) 
-                        ? srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-y")*100, j)) 
+                        ? "blue"// srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-y")*100, j)) //Comment out for lag reduction during active tests
                         : "grey" }}></th>
                     )
                   ) 
