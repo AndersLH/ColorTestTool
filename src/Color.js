@@ -158,7 +158,7 @@ function Color({  srgbValue,
 
   const protan = {x1: newPro.u, y1: newPro.v, yMin: 0.15, yMax: 0.53, xyStop:0.05}; 
   const deutan = {x1: newDeu.u, y1: newDeu.v, yMin: 0.15, yMax: 0.46, xyStop:0.6}; 
-  const tritan = {x1: newTri.u, y1: newTri.v, yMin: 0.1, yMax: 0.40, xyStop:0.6};
+  const tritan = {x1: newTri.u, y1: newTri.v, yMin: 0.1, yMax: 0.35, xyStop:0.6};
 
   //Temporary store lines and wait for refresh button generate new ones
   let [generateNewCF, setGenerateNewCF] = useState(true);
@@ -311,11 +311,11 @@ function Color({  srgbValue,
   }
 
   //Interpolate and find a point t on line from x1,y1 to x2,y2 
-  function interpolate(x1, y1, x2, y2, t, i, j, radius, noise) {
+  function interpolate(x1, y1, x2, y2, t, i, j, radius, noise, type) {
 
     //Interpolate functions
     let dot = mathInter(x1, y1, x2, y2, t, j);
-    let originalDot = mathInter(x1, y1, x2, y2, t, j);
+    let originalDot = dot;
 
     //If out of boundary, use recursion until it is
     while(!isPointInTriangle(dot.x,dot.y)){
@@ -328,6 +328,17 @@ function Color({  srgbValue,
         break;
       }
     }
+
+    //Once dots are inside the triangle, move one more time to get them away from the edge 
+    if(type === "t"){
+      t += 0.04;
+    } else if (type === "d"){
+      t += 0.005;
+    } else {
+      t += 0.01
+    }
+    dot = mathInter(x1,y1,x2,y2,t,j);
+
   
     //Check if current dot is too close to another dot or too close to the whitepoint
     for(let a = 0; a < j; a++){
@@ -346,7 +357,7 @@ function Color({  srgbValue,
     
 
     //Random angle in any direction
-    // const angle = Math.random() * 2 * Math.PI; 
+    // const angle = Math.random() * 2  * Math.PI; 
 
     //Calculate the distance moving away from the confusion line as "noise"
     //Calculated angle perpindicular to line
@@ -375,6 +386,7 @@ function Color({  srgbValue,
     //If the noise is outside, revert changes
     if(!isPointInTriangle(dot.x,dot.y)){
       dot = originalDot;
+      console.log("oopsie")
     }
 
     addConfusionDots(dot, i, j);
@@ -384,15 +396,15 @@ function Color({  srgbValue,
 
 
   //Calculate the dots and colors on the dots on a confusion line
-  function calcConfusionDot(x1, y1, x2, y2, stat, xCoor, i,j){
+  function calcConfusionDot(x1, y1, x2, y2, stat, xCoor, i,j, type){
 
     //Calculate the dots based on their respective confusion lines and interpolate
     let dot;
-    let tValue = 0.1; //Math.random();
+    let tValue = 0.1; 
     if(xCoor){ //Checks if x2,y2 coordinates need to be swapped depending on the confusion line, tritan differs from deutan and protan
-      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,tValue, i, j, colRadius, noiseLevel);
+      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,tValue, i, j, colRadius, noiseLevel, type);
     } else {
-      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),tValue, i, j, colRadius, noiseLevel);
+      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),tValue, i, j, colRadius, noiseLevel, type);
     }
 
     
@@ -560,7 +572,7 @@ function Color({  srgbValue,
                       { length: globalNumColors },
                         (_, j) => {
                           //Calculate confusion dot
-                          const calcDot = calcConfusionDot(protan.x1, protan.y1, protan.yMin, protan.yMax, protan.xyStop, false, i,j);
+                          const calcDot = calcConfusionDot(protan.x1, protan.y1, protan.yMin, protan.yMax, protan.xyStop, false, i,j, "p");
                           return(
                             // Confusion dots
                             <circle key={j+"dot-"+i+"t"} 
@@ -603,7 +615,7 @@ function Color({  srgbValue,
                         { length: globalNumColors },
                           (_, j) => {
                             //Calculate confusion dot
-                            const calcDot = calcConfusionDot(deutan.x1, deutan.y1, deutan.yMin, deutan.yMax, deutan.xyStop, false, i,j);
+                            const calcDot = calcConfusionDot(deutan.x1, deutan.y1, deutan.yMin, deutan.yMax, deutan.xyStop, false, i,j, "d");
                             return(
                               // Confusion dots
                               <circle key={j+"dot-"+i+"t"} 
@@ -645,7 +657,7 @@ function Color({  srgbValue,
                       { length: globalNumColors },
                         (_, j) => {
                           //Calculate confusion dot
-                          const calcDot = calcConfusionDot(tritan.x1, tritan.y1, tritan.yMin, tritan.yMax, tritan.xyStop, true, i,j);
+                          const calcDot = calcConfusionDot(tritan.x1, tritan.y1, tritan.yMin, tritan.yMax, tritan.xyStop, true, i,j, "t");
                           return(
                             // Confusion dots
                             <circle key={j+"dot-"+i+"t"} 
