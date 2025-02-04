@@ -107,6 +107,7 @@ function ColorTest() {
     let [globalNumSpecialColors] = useState(1); // How many background colors (always 1)
     let [numConfusionLines] = useState(2); // How many confusion lines
     let currentBrightness = useRef(100);
+    let brightReduce = useRef(0);
     let noiseColor = useRef(false);
 
     //Track time
@@ -240,9 +241,9 @@ function ColorTest() {
                 [(figures.current[i].x / (plate.current.getAttribute("width") / motiveW) | 0)])
                 figures.current[i].fill = "fil" + rnd; 
                 else{
-                    //Add a motive color into background as noise
+                    //Add a motive color into background as noise, 15% chance * 25 chance from rnd2 % (about 4 %) of background dots being colored
                     if(activeTest.current === "noiseColor"){
-                        figures.current[i].fill = "fil" + (Math.random() < 0.5 ? (rnd2 + globalNumColors - 1) : (rnd + globalNumColors));
+                        figures.current[i].fill = "fil" + (Math.random() < 0.15 ? (rnd2 + globalNumColors - 1) : (rnd + globalNumColors));
                     } else {
                         figures.current[i].fill = "fil" + (rnd + globalNumColors); //
                     }
@@ -403,9 +404,9 @@ function ColorTest() {
                         colRadius={colRadius} 
                         currentRadio={currentRadio} 
                         currentBrightness={currentBrightness.current}
+                        brightReduce={brightReduce.current}
                         currentColorType={currentColorType}
                         recieveRadioVal={(value) => recieveRadio(value)} 
-                        recieveBrightnessVal={(value) => recieveBrightness(value)}
                         recieveColorType={(value) => recieveColor(value)}
                         srgbValue={(value) => recieveSrgbValue(value)} />
             );
@@ -553,9 +554,6 @@ function ColorTest() {
     const recieveRadio = (newRadio) => {
         currentRadio = newRadio;
     }
-    const recieveBrightness = (newBri) => {
-        currentBrightness.current = newBri;
-    }
     const recieveColor = (newCol) => {
         currentColorType = newCol;
     }
@@ -624,7 +622,7 @@ function ColorTest() {
         globalRadiusChange = 0;
         globalBorder = false;
         backgroundColor.current = "#FFFFFF"; 
-        currentBrightness.current = 100;
+        brightReduce.current = 0;
         globalCurrentType = "Circle";
 
         //Reset colors for new test
@@ -689,7 +687,7 @@ function ColorTest() {
                     globalBorder || 
                     noiseLevel.current > 0.01 || 
                     noiseColor.current ||
-                    (currentBrightness.current > 80 && activeTest.current === "brightness") || 
+                    (brightReduce.current === 0 && activeTest.current === "brightness") || 
                     (backgroundColor.current === "#000000" && activeTest.current === "background") || 
                     globalCurrentType === "Square"){
                     correctPress = true;
@@ -728,7 +726,7 @@ function ColorTest() {
                 NoiseColor: activeTest.current === "noiseColor" ? "true" : "",
                 CircleSize: activeTest.current === "size" ? globalRadiusChange : "",
                 Border: activeTest.current === "border" ? globalBorder ? "true" : "false" : "",
-                Brightness: currentBrightness.current,
+                BrightnessRedcued: brightReduce.current,
                 BackgroundColor: activeTest.current === "background" ? backgroundColor.current : "",  
                 Shape: globalCurrentType,
                 TimeSpentPlate: plateTime.current,
@@ -785,7 +783,7 @@ function ColorTest() {
 
                 //Brightness parameter reset
                 if(activeTest.current === "brightness"){
-                    currentBrightness.current = 20;
+                    brightReduce.current = 12;
                 }
 
                 if(activeTest.current === "shape"){
@@ -803,8 +801,8 @@ function ColorTest() {
                         case "size": activeTest.current = "border"; recieveColor("protan"); recieveRadio(1); break;
                         case "border": activeTest.current = "background"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#BFBFBF"; break;
                         case "background": activeTest.current = "shape"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#FFFFFF";  globalCurrentType = "Triangle"; globalRadiusChange = 6; break;
-                        case "shape": activeTest.current = "brightness"; recieveColor("protan"); recieveRadio(1); globalCurrentType = "Circle"; globalRadiusChange = 0; currentBrightness.current = 20; break;
-                        case "brightness": fullReset(); break; //currentBrightness.current = 100; break;
+                        case "shape": activeTest.current = "brightness"; recieveColor("protan"); recieveRadio(1); globalCurrentType = "Circle"; globalRadiusChange = 0; brightReduce.current = 12; break;
+                        case "brightness": fullReset(); brightReduce.current = 0; break;
                         default: break;
                     }
                 } else if(currentRadio === numConfusionLines){ //Reached final confusion line
@@ -847,7 +845,11 @@ function ColorTest() {
                     globalBorder = true;
                 }
                 if(activeTest.current === "brightness"){
-                    currentBrightness.current += 20;
+                    brightReduce.current -= 4;
+                    //avoid negative numbers
+                    if(brightReduce.current < 0){
+                        brightReduce.current = 0;
+                    }
                 }
                 if(activeTest.current === "background"){
                     //Remove "#"
@@ -861,14 +863,9 @@ function ColorTest() {
                     backgroundColor.current = `#${colorHex}`;
                 }
                 if(activeTest.current === "shape"){
-                    console.log("inchange", globalCurrentType);
                     globalRadiusChange = 3;
                     globalCurrentType = "Square";
 
-                    // switch(globalCurrentType){
-                    //     case "Triangle": console.log("change");globalCurrentType = "Square"; globalRadiusChange = 4; break;
-                    //     default: break;
-                    // }
                 }
             }
             //Re-render color test
@@ -1040,9 +1037,9 @@ function ColorTest() {
                 <select onChange={(e) => {
                     activeTest.current = e.target.value; 
                     //Set brightness to testing value
-                    if(e.target.value === "brightness"){currentBrightness.current=20;} 
-                    else {currentBrightness.current = 100;}
-                    
+                    if(e.target.value === "brightness"){brightReduce.current = 12;} 
+                    else {brightReduce.current = 0;}
+
                     //Set background color to testing grey
                     if(e.target.value === "background"){backgroundColor.current = "#BFBFBF";}
                     else {backgroundColor.current = "#FFFFFF";}

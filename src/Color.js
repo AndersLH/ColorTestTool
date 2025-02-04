@@ -74,7 +74,7 @@ function xyz2srgb(XYZ) {
 }
 
 //Combined function to convert xyY to sRGB
-function xyy2srgb(x, y, Y) {
+function xyy2srgb(x, y, Y, br) {
   let XYZ = xyy2xyz(x, y, Y);
   let sRGB = xyz2srgb(XYZ); 
 
@@ -84,6 +84,9 @@ function xyy2srgb(x, y, Y) {
     XYZ = xyy2xyz(x, y, Y);
     sRGB = xyz2srgb(XYZ);       
   }
+
+    XYZ = xyy2xyz(x, y, Y-br);
+    sRGB = xyz2srgb(XYZ);
 
   // console.log("xy:",uv2xy(x,y),"FinalY:",Y);
   
@@ -96,16 +99,15 @@ let cfList = [];
 
 function Color({  srgbValue, 
                   recieveRadioVal, 
-                  recieveBrightnessVal, 
                   recieveColorType,
                   currentRadio, 
                   globalNumColors, 
                   numConfusionLines,
                   noiseLevel, 
                   colRadius, 
-                  currentBrightness, 
+                  brightReduce,
+                  currentBrightness,
                   currentColorType}) {
-
                     
   //Click coordinates
   const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
@@ -118,8 +120,6 @@ function Color({  srgbValue,
   for(let i = 0; i < numConfusionLines+1; i++){
     maxBrightConfusion.current[i] = 100;
   }
-
-
 
   //Coordinates for white point D65
   const whitePoint1931 = {x: 0.31272, y: 0.32903};
@@ -170,14 +170,13 @@ function Color({  srgbValue,
   //Update brightness slider
   const changeBrightness = (event) => {
     setSliderBright(event.target.value);
-    recieveBrightnessVal(event.target.value);
   }
 
   //Calculate sRGB values from x,y coordinates and slider brightness
   function calcSRGB(x,y, conLine){
-    y = 100-y; //Inverted y-axis in web
+    y = 100-y; //Inverted y-axis on web page
+    let srgb = xyy2srgb((x / 100), (1-(y / 100)), maxBrightConfusion.current[conLine], brightReduce); //sliderBright old parameter
 
-    let srgb = xyy2srgb((x / 100), (1-(y / 100)), maxBrightConfusion.current[conLine]); //sliderBright old parameter
     // console.log("confusionLine:",conLine, srgb.a, srgb.b);
 
     if(listConfusionColors.current.length === globalNumColors ){
@@ -192,9 +191,12 @@ function Color({  srgbValue,
     }
 
 
+    console.log("br:",brightReduce, maxBrightConfusion.current);
 
-    //Set the lowest brightness to all confusion line dots
+    //Set the new minimum brightness as max brightness
     maxBrightConfusion.current[conLine] = srgb.b;
+    
+    setSliderBright(currentBrightness);
 
     return srgb.a;
   }
@@ -386,7 +388,6 @@ function Color({  srgbValue,
     //If the noise is outside, revert changes
     if(!isPointInTriangle(dot.x,dot.y)){
       dot = originalDot;
-      console.log("oopsie")
     }
 
     addConfusionDots(dot, i, j);
@@ -496,7 +497,7 @@ function Color({  srgbValue,
 
                         //Duplicate to update the brightness of the colors, temporary fix but works well
                         for (let m = 0; m < globalNumColors; m++){
-                          listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-y")*100)));
+                          listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${m}-dot`).getAttribute("data-coord-y")*100, j)));
                           listConfusionCoords.current = j;
                         }
                         document.getElementById(`${j-1}-line`).style.strokeWidth = 4;
@@ -531,7 +532,7 @@ function Color({  srgbValue,
           }
           listConfusionColors.current = [];
           for (let m = 0; m < globalNumColors; m++){
-              listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${listConfusionCoords.current-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${listConfusionCoords.current-1}-line-${m}-dot`).getAttribute("data-coord-y")*100, listConfusionCoords.current-1)));
+              listConfusionColors.current.push(srgbToHex(calcSRGB(document.getElementById(`${listConfusionCoords.current-1}-line-${m}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${listConfusionCoords.current-1}-line-${m}-dot`).getAttribute("data-coord-y")*100, listConfusionCoords.current-1, 0)));
             }
             srgbValue(listConfusionColors.current);
           }
