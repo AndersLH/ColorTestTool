@@ -125,6 +125,8 @@ function ColorTest() {
     let nowClick = useRef(null);
     let currentClick = useRef(null);
 
+    let startForm = useRef(null);
+
     //AFK timer
     const timeoutAfk = useRef(1000000);
     let afkTimer = useRef(false);
@@ -604,6 +606,8 @@ function ColorTest() {
         svgCircles.current.style.display = "none";
         startTest.current = false;
 
+        startForm.current.reset(); //reset form for next person
+
         //Collect data after test
         document.getElementById("excelButton").click();
 
@@ -923,7 +927,7 @@ function ColorTest() {
                 <br></br><br></br>
 
                 The test is anonymous and the data gathered will be used to aid my master's thesis. 
-                By participating in this test, you will agree to your test results and information below being used
+                By participating in this test, you agree to your test results and information below being used
                 and published in my master's thesis.
                 <br></br><br></br>
                 Contact me at <b>andelha@stud.ntnu.no</b> if you have any questions.
@@ -933,7 +937,7 @@ function ColorTest() {
 
                 <img src={redgreen}  width="25%" alt=""/>
 
-                <form>
+                <form ref={startForm}>
                 <div className="containerRadio">
                     
                     
