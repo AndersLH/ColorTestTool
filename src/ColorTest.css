@@ -22,18 +22,21 @@
 
 /* Rainbow shadow for title :D */
 @keyframes rainbow {
-    0% { text-shadow: 0 0 8px red; }
-    14% { text-shadow: 0 0 8px orange; }
-    28% { text-shadow: 0 0 8px yellow; }
-    42% { text-shadow: 0 0 8px green; }
-    57% { text-shadow: 0 0 8px blue; }
-    71% { text-shadow: 0 0 8px indigo; }
-    85% { text-shadow: 0 0 8px violet; }
-    100% { text-shadow: 0 0 8px red; }
+    0% { text-shadow: 0 0 18px red; }
+    14% { text-shadow: 0 0 18px orange; }
+    28% { text-shadow: 0 0 18px yellow; }
+    42% { text-shadow: 0 0 18px green; }
+    57% { text-shadow: 0 0 18px blue; }
+    71% { text-shadow: 0 0 18px indigo; }
+    85% { text-shadow: 0 0 18px violet; }
+    100% { text-shadow: 0 0 18px red; }
   }
   
   .rainbowText {
-    animation: rainbow 10s infinite;
+    animation: rainbow 8s infinite;
+  }
+  .rainbowTextDelay {
+    animation: rainbow 7s infinite;
   }
 
 /* Default button styling */

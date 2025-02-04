@@ -3,7 +3,8 @@ import Color from "./Color";
 import ReactDOM from "react-dom/client";
 import ExcelExport from './ExcelExport';
 import "./ColorTest.css"
-
+import easytest from "./easytest.png";
+import redgreen from "./redgreen.png";
 
 function ColorTest() {
 
@@ -81,6 +82,7 @@ function ColorTest() {
 
     //User age and gender
     let userAge = useRef(null);
+    let userExp = useRef(null);
     let userGender = useRef(null);
 
     //Track score for player
@@ -105,7 +107,7 @@ function ColorTest() {
     let [globalCurrentType] = useState("Circle"); // Current type of figure to be drawn
     let [globalNumColors] = useState(3); // How many colors on motive and background(each)
     let [globalNumSpecialColors] = useState(1); // How many background colors (always 1)
-    let [numConfusionLines] = useState(2); // How many confusion lines
+    let [numConfusionLines] = useState(3); // How many confusion lines
     let currentBrightness = useRef(100);
     let brightReduce = useRef(0);
     let noiseColor = useRef(false);
@@ -136,7 +138,7 @@ function ColorTest() {
     let fpsb = useRef(new Date());
     let fpsCount = useRef(5);
     
-    let activeTest = useRef("noise");
+    let activeTest = useRef("size");
 
     // Main loop
     function init() {
@@ -628,7 +630,7 @@ function ColorTest() {
         //Reset colors for new test
         recieveColor("protan");
         recieveRadio(1);
-        activeTest.current = "noise";
+        activeTest.current = "size";
 
         //Re-render
         showColorChoice();
@@ -719,6 +721,7 @@ function ColorTest() {
                 ID: 1,  
                 Age: userAge.current,
                 Gender: userGender.current,
+                Experience: userExp.current,
                 Motive: motive.current.value, 
                 UserKey: key, 
                 CorrectPress: motive.current.value === key ? "yes" : "no", 
@@ -726,7 +729,7 @@ function ColorTest() {
                 NoiseColor: activeTest.current === "noiseColor" ? "true" : "",
                 CircleSize: activeTest.current === "size" ? globalRadiusChange : "",
                 Border: activeTest.current === "border" ? globalBorder ? "true" : "false" : "",
-                BrightnessRedcued: brightReduce.current,
+                BrightnessRedcued: activeTest.current === "brightness" ? brightReduce.current : "",
                 BackgroundColor: activeTest.current === "background" ? backgroundColor.current : "",  
                 Shape: globalCurrentType,
                 TimeSpentPlate: plateTime.current,
@@ -796,9 +799,9 @@ function ColorTest() {
                 if(currentRadio === numConfusionLines && currentColorType === "tritan"){
                     //Change parameter or finish test if all parameters are done
                     switch(activeTest.current){
-                        case "noise": activeTest.current = "noiseColor"; recieveColor("protan"); recieveRadio(1); break;
-                        case "noiseColor": activeTest.current = "size"; recieveColor("protan"); recieveRadio(1); break;
-                        case "size": activeTest.current = "border"; recieveColor("protan"); recieveRadio(1); break;
+                        case "size": activeTest.current = "noiseColor"; recieveColor("protan"); recieveRadio(1); break;
+                        case "noiseColor": activeTest.current = "noise"; recieveColor("protan"); recieveRadio(1); break;
+                        case "noise": activeTest.current = "border"; recieveColor("protan"); recieveRadio(1); break;
                         case "border": activeTest.current = "background"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#BFBFBF"; break;
                         case "background": activeTest.current = "shape"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#FFFFFF";  globalCurrentType = "Triangle"; globalRadiusChange = 6; break;
                         case "shape": activeTest.current = "brightness"; recieveColor("protan"); recieveRadio(1); globalCurrentType = "Circle"; globalRadiusChange = 0; brightReduce.current = 12; break;
@@ -908,45 +911,61 @@ function ColorTest() {
             </div>
             <div ref={startPage} className="startPage">
                 {/* Add date to data? */}
-                <h1 className="rainbowText">
-                    Welcome to the color test    
+                <h1 className="rainbowText" style={{marginBottom:"-70px",marginTop:"40px"}}>
+                    Do you have perfect color vision?  
                 </h1>
-                
-                <h2>Information disclosure:</h2>
 
-                <p style={{width:"60%", display:"inline-block"}} >By participating in this test, you agree to having your
-                approximate age and birth gender recorded and stored for the duration 
-                of the spring semester of 2025 and used in my master thesis which will be publically available. It will be used for my master's thesis 
-                regarding testing people's color vision using an improved Ishihara test.... 
-                Send me an email to withdraw your information....
+                <img src={easytest} width="27%" alt="" />
 
+                <p style={{width:"40%", display:"inline-block"}}>
+                This test will challenge your color vision, even if you think you have good color vision! As you take the test, 
+                it will adapt based on your performance. Simply use the keyboard to match the displayed letter or number in the test. 
                 <br></br><br></br>
-                Contact me at <b>andelha@stud.ntnu.no</b> if you have any questions regarding the test.
+
+                The test is anonymous and the data gathered will be used to aid my master's thesis. 
+                By participating in this test, you will agree to your test results and information below being used
+                and published in my master's thesis.
+                <br></br><br></br>
+                Contact me at <b>andelha@stud.ntnu.no</b> if you have any questions.
                 <br></br><br></br>
                 <i>-Anders Lunde Hagen</i>
                 </p>
 
+                <img src={redgreen}  width="25%" alt=""/>
+
                 <form>
                 <div className="containerRadio">
-                    <div className="radioDiv">
-                            <h3>
-                                Select your age range:   
+                    
+                    
+                    <div className="radioDiv" style={{flex:"0.5"}}>
+                            <h3 title="Why do I ask for this?
+                                        People who have a lot of experience within color science and color tests might perform better">
+                                How experienced are you within the field of color science: <span style={{cursor:"help"}}>ⓘ</span>  
                             </h3>
                         <div style={{display:"inline-block", textAlign:"right"}}>  
-                            <label>Under 18<input name="age" type="radio" onChange={(e) => userAge.current = "under 18"}></input></label><br></br>
-                            <label>18-25<input name="age" type="radio" onChange={(e) => userAge.current = "18-25"}></input></label><br></br>
-                            <label>26-35<input name="age" type="radio" onChange={(e) => userAge.current = "26-35"}></input></label><br></br>
-                            <label>36-45<input name="age" type="radio" onChange={(e) => userAge.current = "36-45"}></input></label><br></br>
-                            <label>46-55<input name="age" type="radio" onChange={(e) => userAge.current = "46-55"}></input></label><br></br>
-                            <label>56-65<input name="age" type="radio" onChange={(e) => userAge.current = "56-65"}></input></label><br></br>
-                            <label>66-75<input name="age" type="radio" onChange={(e) => userAge.current = "66-75"}></input></label><br></br>
-                            <label>Over 75<input name="age" type="radio" onChange={(e) => userAge.current = "over 75"} required></input></label><br></br>
-                            <label>No answer<input name="age" type="radio" onChange={(e) => userAge.current = "no answer"}></input></label>
+                            <label>No experience<input name="exp" type="radio" onChange={(e) => userExp.current = "no experience"}></input></label><br></br>
+                            <label>Some experience<input name="exp" type="radio" onChange={(e) => userExp.current = "some experience"}></input></label><br></br>
+                            <label>Well experienced<input name="exp" type="radio" onChange={(e) => userExp.current = "well experienced"} required></input></label><br></br>
+                            <label>No answer<input name="exp" type="radio" onChange={(e) => userExp.current = "no answer"}></input></label>
                         </div>
                     </div>
 
-                    <div style={{flex:0.2, alignSelf:"center"}}>
-                        <h3>
+                    <div className="radioDiv" style={{flex:"0.5"}}>
+                        <h3 title="Why do I ask for this?
+                            Males have a higher chance of having a type of color vision deficiency, so this will be used to look for abnormalities in the data">
+                            Select your gender at birth: <span style={{cursor:"help"}}>ⓘ</span><br></br>
+                            
+                        </h3>
+                        <div style={{display:"inline-block", textAlign:"right"}}>
+                            <label>Male<input name="gender" type="radio" onChange={() => userGender.current = "male"}></input></label><br></br>
+                            <label>Female<input name="gender" type="radio" onChange={() => userGender.current = "female"} required></input></label><br></br>
+                            <label>No answer<input name="gender" type="radio" onChange={() => userGender.current = "no answer"}></input></label><br></br>
+                        </div>
+                    </div>
+
+
+                    <div style={{flex:0.2, alignSelf:"center", marginTop:"-150px"}}>
+                        <h3 className="rainbowTextDelay">
                             Start test
                         </h3>
                         <button type="submit" onClick={(e) => {
@@ -976,44 +995,33 @@ function ColorTest() {
                     </div>
 
                     <div className="radioDiv">
-                        <h3>
-                            Select your gender at birth: <br></br>
-                            (Why do I ask for this? <br></br>
-                            Males have a considerably higher chance of being born <br></br> with a color vision deficiency):
-                        </h3>
-                        <div style={{display:"inline-block", textAlign:"right"}}>
-                            <label>Male<input name="gender" type="radio" onChange={() => userGender.current = "male"}></input></label><br></br>
-                            <label>Female<input name="gender" type="radio" onChange={() => userGender.current = "female"} required></input></label><br></br>
-                            <label>No answer<input name="gender" type="radio" onChange={() => userGender.current = "no answer"}></input></label><br></br>
+                            <h3 title="Why do I ask for this?
+                                        A person might have improved or worsened color vision as they age">
+                                Select your age range: <span style={{cursor:"help"}}>ⓘ</span> 
+                            </h3>
+                        <div style={{display:"inline-block", textAlign:"right"}}>  
+                            <label>Under 18<input name="age" type="radio" onChange={(e) => userAge.current = "under 18"}></input></label><br></br>
+                            <label>18-25<input name="age" type="radio" onChange={(e) => userAge.current = "18-25"}></input></label><br></br>
+                            <label>26-35<input name="age" type="radio" onChange={(e) => userAge.current = "26-35"}></input></label><br></br>
+                            <label>36-45<input name="age" type="radio" onChange={(e) => userAge.current = "36-45"}></input></label><br></br>
+                            <label>46-55<input name="age" type="radio" onChange={(e) => userAge.current = "46-55"}></input></label><br></br>
+                            <label>56-65<input name="age" type="radio" onChange={(e) => userAge.current = "56-65"}></input></label><br></br>
+                            <label>66-75<input name="age" type="radio" onChange={(e) => userAge.current = "66-75"}></input></label><br></br>
+                            <label>Over 75<input name="age" type="radio" onChange={(e) => userAge.current = "over 75"} required></input></label><br></br>
+                            <label>No answer<input name="age" type="radio" onChange={(e) => userAge.current = "no answer"}></input></label>
                         </div>
                     </div>
+
+                    
                 </div>
                 </form>
 
-                <h3> How to do the test: </h3>
+                {/* <h3> How to do the test: </h3>
                 <p style={{width:"40%", display:"inline-block"}}>
-                    Once you click the start button, multiple color tests will
-                    appear one at a time, with either a lowercase letter or a number.
-                    Your task is to press the corresponding key on the keyboard of 
-                    this laptop as they appear. The test will go through several different
-                    types of tests as you progress. 
-                    <br></br><br></br>
-                    At the end of the test, you will be given how many 
-                    correct and incorrect answers you got. There will be about 80
-                    Ishihara plates and will take about 4 minutes to finish. 
 
-                    Det trengs imidlertid ikke samtykke som juridisk behandlingsgrunnlag, 
-                    da det ikke behandles personopplysninger. Dermed skal det heller ikke 
-                    stå noe om innsyn, retting eller rett til å trekke samtykket i informasjonen som gis. 
-                    I stedet kan det for eksempel stå at datainnsamlingen er anonym, og at en ved å
-                    gjennomføre undersøkelsen anses å ha samtykket. Det skal IKKE være noen signatur eller 
-                    lignende som kan identifisere deltakeren. Det skal heller ikke stå noe om at datamaterialet skal
-                    behandles konfidensielt dersom dette ikke er tilfellet. Dersom datamaterialet skal deles
-                    eller publiseres i ettertid, for eksempel i et åpent dataarkiv, skal du likevel gjøre 
-                    oppmerksom på det.
 
                      
-                </p>
+                </p> */}
 
             </div>
             <div ref={endPage} style={{display:"none"}} className="endPage">

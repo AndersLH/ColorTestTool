@@ -191,7 +191,7 @@ function Color({  srgbValue,
     }
 
 
-    console.log("br:",brightReduce, maxBrightConfusion.current);
+    // console.log("br:",brightReduce, maxBrightConfusion.current);
 
     //Set the new minimum brightness as max brightness
     maxBrightConfusion.current[conLine] = srgb.b;
@@ -319,9 +319,9 @@ function Color({  srgbValue,
     let dot = mathInter(x1, y1, x2, y2, t, j);
     let originalDot = dot;
 
-    //If out of boundary, use recursion until it is
+    //If out of boundary, move dot closer until it is
     while(!isPointInTriangle(dot.x,dot.y)){
-      t += 0.02;
+      t += 0.005;
       dot = mathInter(x1,y1,x2,y2,t, j);
 
       //Prevent infinite loop
