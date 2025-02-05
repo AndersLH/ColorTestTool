@@ -1004,14 +1004,11 @@ function ColorTest() {
                                 Select your age range: <span style={{cursor:"help"}}>ⓘ</span> 
                             </h3>
                         <div style={{display:"inline-block", textAlign:"right"}}>  
-                            <label>Under 18<input name="age" type="radio" onChange={(e) => userAge.current = "under 18"}></input></label><br></br>
-                            <label>18-25<input name="age" type="radio" onChange={(e) => userAge.current = "18-25"}></input></label><br></br>
-                            <label>26-35<input name="age" type="radio" onChange={(e) => userAge.current = "26-35"}></input></label><br></br>
-                            <label>36-45<input name="age" type="radio" onChange={(e) => userAge.current = "36-45"}></input></label><br></br>
-                            <label>46-55<input name="age" type="radio" onChange={(e) => userAge.current = "46-55"}></input></label><br></br>
-                            <label>56-65<input name="age" type="radio" onChange={(e) => userAge.current = "56-65"}></input></label><br></br>
-                            <label>66-75<input name="age" type="radio" onChange={(e) => userAge.current = "66-75"}></input></label><br></br>
-                            <label>Over 75<input name="age" type="radio" onChange={(e) => userAge.current = "over 75"} required></input></label><br></br>
+                            <label>Under 20<input name="age" type="radio" onChange={(e) => userAge.current = "under 20"}></input></label><br></br>
+                            <label>21-40<input name="age" type="radio" onChange={(e) => userAge.current = "21-40"}></input></label><br></br>
+                            <label>41-60<input name="age" type="radio" onChange={(e) => userAge.current = "41-60"}></input></label><br></br>
+                            <label>61-80<input name="age" type="radio" onChange={(e) => userAge.current = "61-80"}></input></label><br></br>
+                            <label>Over 80<input name="age" type="radio" onChange={(e) => userAge.current = "over 80"} required></input></label><br></br>
                             <label>No answer<input name="age" type="radio" onChange={(e) => userAge.current = "no answer"}></input></label>
                         </div>
                     </div>
