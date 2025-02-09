@@ -934,7 +934,7 @@ function ColorTest() {
             </div>
             <div ref={startPage} className="startPage">
                 {/* Add date to data? */}
-                <h1 className="rainbowText" style={{marginBottom:"-70px",marginTop:"40px"}}>
+                <h1 className="rainbowText" style={{marginBottom:"-40px",marginTop:"40px"}}>
                     Do you have perfect color vision?  
                 </h1>
 
@@ -943,6 +943,7 @@ function ColorTest() {
                 <p style={{width:"40%", display:"inline-block"}}>
                 This test will challenge your color vision, even if you think you have good color vision! As you take the test, 
                 it will adapt based on your performance. Simply use the <b><i>keyboard</i></b> to match the displayed lower case letter or number during the test. 
+                If the displayed number or letter is difficult or nearly impossible to see, make your best guess anyway. 
                 <br></br><br></br>
 
                 The test is anonymous and the data gathered will be used to aid my master's thesis. 
@@ -1046,8 +1047,8 @@ function ColorTest() {
                     <b>{finalScoreParticipantD}/{finalMaxScoreD}</b> correct answers for deutan (green). <br></br> 
                     <b>{finalScoreParticipantT}/{finalMaxScoreT}</b> correct answers for tritan (blue). <br></br> 
                     <br></br>
-                    (Disclaimer: incorrect answers are not an indication color vision deficiency, as the test is slighlty random making some
-                    tests prone to errors even for people with perfect color vision)
+                    (Disclaimer: incorrect answers may not be an indication of color vision deficiency (color blindness), as the test is slighlty random making it
+                    prone to errors even for people with perfect color vision)
                 </div>
 
                     <br></br>
