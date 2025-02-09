@@ -31,12 +31,23 @@
     85% { text-shadow: 0 0 18px violet; }
     100% { text-shadow: 0 0 18px red; }
   }
+
+  @keyframes rainbowReverse {
+      0% { text-shadow: 0 0 18px red; }
+      14% { text-shadow: 0 0 18px violet; }
+      28% { text-shadow: 0 0 18px indigo; }
+      42% { text-shadow: 0 0 18px blue; }
+      57% { text-shadow: 0 0 18px green; }
+      71% { text-shadow: 0 0 18px yellow; }
+      85% { text-shadow: 0 0 18px orange; }
+      100% { text-shadow: 0 0 18px red; }
+  }
   
   .rainbowText {
     animation: rainbow 8s infinite;
   }
   .rainbowTextDelay {
-    animation: rainbow 7s infinite;
+    animation: rainbowReverse 7s infinite;
   }
 
 /* Default button styling */

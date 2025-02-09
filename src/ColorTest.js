@@ -77,6 +77,12 @@ function ColorTest() {
     let [currentColorType] = useState("protan");
     let [currentColorList] = useState([]);
 
+    //Toggle button for enabling table graphics
+    let [toggleTable,setToggleTable] = useState(false);
+
+    //Progress bar during live test
+    let progressBar = useRef(null);
+
     //Start variable for the test
     let startTest = useRef(false);
 
@@ -132,7 +138,7 @@ function ColorTest() {
     let afkTimer = useRef(false);
 
     //End screen timer
-    const timeoutEndScreen = useRef(15000);
+    const timeoutEndScreen = useRef(30000);
     let endTimer = useRef(false);
     
     let figures = useRef([]);
@@ -247,7 +253,7 @@ function ColorTest() {
                 else{
                     //Add a motive color into background as noise, 15% chance * 25 chance from rnd2 % (about 4 %) of background dots being colored
                     if(activeTest.current === "noiseColor"){
-                        figures.current[i].fill = "fil" + (Math.random() < 0.15 ? (rnd2 + globalNumColors - 1) : (rnd + globalNumColors));
+                        figures.current[i].fill = "fil" + (Math.random() < 0.11 ? (rnd2 + globalNumColors - 1) : (rnd + globalNumColors));
                     } else {
                         figures.current[i].fill = "fil" + (rnd + globalNumColors); //
                     }
@@ -409,6 +415,8 @@ function ColorTest() {
                         currentRadio={currentRadio} 
                         currentBrightness={currentBrightness.current}
                         brightReduce={brightReduce.current}
+                        toggleTable={toggleTable}
+                        setToggleTable={setToggleTable}
                         currentColorType={currentColorType}
                         recieveRadioVal={(value) => recieveRadio(value)} 
                         recieveColorType={(value) => recieveColor(value)}
@@ -598,6 +606,8 @@ function ColorTest() {
 
         //Stop timer to prevent double refresh
         clearTimeout(endTimer.current);
+
+        window.location.reload();
     }
 
     function fullReset(){
@@ -607,6 +617,11 @@ function ColorTest() {
         startTest.current = false;
 
         startForm.current.reset(); //reset form for next person
+
+        //Reset progress bar
+        progressBar.current.style.display = "none";
+        progressBar.current.innerHTML = "Progress: 0 %";
+
 
         //Collect data after test
         document.getElementById("excelButton").click();
@@ -650,7 +665,6 @@ function ColorTest() {
         }, timeoutEndScreen.current);        
     }
 
-
     //Color testing
     useEffect(() => {
         //Check for key press during testing
@@ -691,7 +705,7 @@ function ColorTest() {
                 if( motive.current.value === key || 
                     (globalRadiusChange > 3 && activeTest.current === "size") || 
                     globalBorder || 
-                    noiseLevel.current > 0.01 || 
+                    noiseLevel.current > 0.008 || 
                     noiseColor.current ||
                     (brightReduce.current === 0 && activeTest.current === "brightness") || 
                     (backgroundColor.current === "#000000" && activeTest.current === "background") || 
@@ -803,16 +817,17 @@ function ColorTest() {
                 if(currentRadio === numConfusionLines && currentColorType === "tritan"){
                     //Change parameter or finish test if all parameters are done
                     switch(activeTest.current){
-                        case "size": activeTest.current = "noiseColor"; recieveColor("protan"); recieveRadio(1); break;
-                        case "noiseColor": activeTest.current = "noise"; recieveColor("protan"); recieveRadio(1); break;
-                        case "noise": activeTest.current = "border"; recieveColor("protan"); recieveRadio(1); break;
-                        case "border": activeTest.current = "background"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#BFBFBF"; break;
-                        case "background": activeTest.current = "shape"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#FFFFFF";  globalCurrentType = "Triangle"; globalRadiusChange = 6; break;
-                        case "shape": activeTest.current = "brightness"; recieveColor("protan"); recieveRadio(1); globalCurrentType = "Circle"; globalRadiusChange = 0; brightReduce.current = 12; break;
+                        case "size": activeTest.current = "background"; progressBar.current.innerHTML = "Progress: 15 %"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#BFBFBF"; break;
+                        case "background": activeTest.current = "noise"; progressBar.current.innerHTML = "Progress: 29 %"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#FFFFFF"; break;
+                        case "noise": activeTest.current = "border"; progressBar.current.innerHTML = "Progress: 43 %"; recieveColor("protan"); recieveRadio(1); break;
+                        case "border": activeTest.current = "noiseColor"; progressBar.current.innerHTML = "Progress: 61 %"; recieveColor("protan"); recieveRadio(1);  break;
+                        case "noiseColor": activeTest.current = "shape"; progressBar.current.innerHTML = "Progress: 79 %"; recieveColor("protan"); recieveRadio(1);   globalCurrentType = "Triangle"; globalRadiusChange = 6; break;
+                        case "shape": activeTest.current = "brightness"; progressBar.current.innerHTML = "Progress: 90 %"; recieveColor("protan"); recieveRadio(1); globalCurrentType = "Circle"; globalRadiusChange = 0; brightReduce.current = 12; break;
                         case "brightness": fullReset(); brightReduce.current = 0; break;
                         default: break;
                     }
                 } else if(currentRadio === numConfusionLines){ //Reached final confusion line
+                    
                     //Cycle confusion lines and color tests
                     if(currentColorType === "protan"){
                         recieveColor("deutan");
@@ -821,7 +836,8 @@ function ColorTest() {
                     }
                     recieveRadio(1);
                 } else {
-                    recieveRadio(currentRadio+1); //Go to next confusion line
+                    //Go to next confusion line
+                    recieveRadio(currentRadio+1); 
                 }
                 
 
@@ -898,6 +914,9 @@ function ColorTest() {
         <div ref={loading}>
             <h1 style={{ textAlign: "center" }}>Loading...</h1>
         </div>
+        <h2 ref={progressBar} style={{display:"none", position: "absolute", left: "30px", top:"30px"}}>
+            Progress: 0 %
+        </h2>
         <div ref={app} onClick={() => { globalDraw.current = true; }}>
             <div ref={svgCircles} style={{display:"none"}} className="plateDiv">
                 <svg xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" width="4in" height="4in" version="1.1"
@@ -923,7 +942,7 @@ function ColorTest() {
 
                 <p style={{width:"40%", display:"inline-block"}}>
                 This test will challenge your color vision, even if you think you have good color vision! As you take the test, 
-                it will adapt based on your performance. Simply use the keyboard to match the displayed letter or number in the test. 
+                it will adapt based on your performance. Simply use the <b><i>keyboard</i></b> to match the displayed lower case letter or number during the test. 
                 <br></br><br></br>
 
                 The test is anonymous and the data gathered will be used to aid my master's thesis. 
@@ -985,6 +1004,7 @@ function ColorTest() {
                             startPage.current.style.display = "none";
                             svgCircles.current.style.display = "block";
                             wrapper.current.style.display = "none";
+                            progressBar.current.style.display = "block";
 
                             //Start plate timers
                             startPlateTime.current = Date.now();
@@ -1017,13 +1037,6 @@ function ColorTest() {
                 </div>
                 </form>
 
-                {/* <h3> How to do the test: </h3>
-                <p style={{width:"40%", display:"inline-block"}}>
-
-
-                     
-                </p> */}
-
             </div>
             <div ref={endPage} style={{display:"none"}} className="endPage">
 
@@ -1033,7 +1046,8 @@ function ColorTest() {
                     <b>{finalScoreParticipantD}/{finalMaxScoreD}</b> correct answers for deutan (green). <br></br> 
                     <b>{finalScoreParticipantT}/{finalMaxScoreT}</b> correct answers for tritan (blue). <br></br> 
                     <br></br>
-                    (Disclaimer about incorrect answers not being precise and may not indicate color vision deficiency?)
+                    (Disclaimer: incorrect answers are not an indication color vision deficiency, as the test is slighlty random making some
+                    tests prone to errors even for people with perfect color vision)
                 </div>
 
                     <br></br>

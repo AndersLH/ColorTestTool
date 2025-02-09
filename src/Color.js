@@ -64,8 +64,6 @@ function xyz2srgb(XYZ) {
       ? value * 12.92
       : 1.055 * Math.pow(value, 1 / 2.4) - 0.055;
 
-      //Make an unrestricted dupe of this and make it an if check 
-
       const [sR, sG, sB] = sRGB.map((value) =>
         Math.max(0, gammaCorrect(value) * 255)
   );
@@ -103,6 +101,8 @@ function Color({  srgbValue,
                   currentRadio, 
                   globalNumColors, 
                   numConfusionLines,
+                  toggleTable,
+                  setToggleTable,
                   noiseLevel, 
                   colRadius, 
                   brightReduce,
@@ -196,7 +196,8 @@ function Color({  srgbValue,
     //Set the new minimum brightness as max brightness
     maxBrightConfusion.current[conLine] = srgb.b;
     
-    setSliderBright(currentBrightness);
+
+    // setSliderBright(currentBrightness); //CAUSES INFINITE RE-RENDER
 
     return srgb.a;
   }
@@ -513,7 +514,9 @@ function Color({  srgbValue,
                       //If-check to make sure the element is loaded in. Calculate color and set cell to be the color of the correspoding confusion dot
                       <th key={j + "dot"} style={{backgroundColor: 
                         document.getElementById(`${j-1}-line-${i-1}-dot`) 
-                        ? "blue"// srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-y")*100, j)) //Comment out for lag reduction during active tests
+                        ? toggleTable
+                          ? srgbToHex(calcSRGB(document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-x")*100,document.getElementById(`${j-1}-line-${i-1}-dot`).getAttribute("data-coord-y")*100, j)) 
+                          : "blue" 
                         : "grey" }}></th>
                     )
                   ) 
@@ -525,6 +528,9 @@ function Color({  srgbValue,
         }
         </tbody>
       </table>
+      <button onClick={() => setToggleTable(!toggleTable)} style={{float:"right"}}>
+        {toggleTable ? "ON" : "OFF"}
+      </button>
       <label>Brightness: 
         <input type="range" min="0" max="100" value={sliderBright} id="briSlide" onMouseUp={() => {
           if(listConfusionCoords.current === null){
