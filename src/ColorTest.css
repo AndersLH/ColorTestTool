@@ -20,6 +20,10 @@
     text-align: center;
   }
 
+p{
+    font-size: large;
+}
+
 /* Rainbow shadow for title :D */
 @keyframes rainbow {
     0% { text-shadow: 0 0 18px red; }

@@ -82,9 +82,13 @@ function ColorTest() {
 
     //Progress bar during live test
     let progressBar = useRef(null);
+    let progressCount = useRef(0);
 
     //Start variable for the test
     let startTest = useRef(false);
+
+    //Instruction text under plates
+    let instructionPlate = useRef(null);
 
     //User age and gender
     let userAge = useRef(null);
@@ -542,8 +546,6 @@ function ColorTest() {
         a.download = "filename.svg";
     }
 
-    //List of svgs
-    let svgDiv = useRef(null);
 
 
 
@@ -554,13 +556,6 @@ function ColorTest() {
             document.getElementById("fil"+i).value =  newSrgb[i]  // hexList.current[i];
         }
     };
-    //   Add each SVG string into the div (early testing)
-    // svgDiv.current.innerHTML = "";
-    //   svgList.current.forEach((svgContent) => {
-    //     const container = document.createElement('div');
-    //     container.innerHTML = svgContent; // Set the SVG content
-    //     svgDiv.current.appendChild(container); // Append the div to the target div
-    //   });
 
     //Change values from child element
     const recieveRadio = (newRadio) => {
@@ -587,6 +582,7 @@ function ColorTest() {
     function removeEndScreen(){
         //Hide start page
         startPage.current.style.display = "block";
+        instructionPlate.current.style.display = "none";
         endPage.current.style.display = "none";
         svgCircles.current.style.display = "none";
     
@@ -607,7 +603,7 @@ function ColorTest() {
         //Stop timer to prevent double refresh
         clearTimeout(endTimer.current);
 
-        window.location.reload();
+        window.location.reload(); //Refresh page due to long sits in library for performance
     }
 
     function fullReset(){
@@ -620,7 +616,8 @@ function ColorTest() {
 
         //Reset progress bar
         progressBar.current.style.display = "none";
-        progressBar.current.innerHTML = "Progress: 0 %";
+        progressCount.current = 0;
+        progressBar.current.innerHTML = "Progress: "+progressCount.current+" %";
 
 
         //Collect data after test
@@ -694,7 +691,7 @@ function ColorTest() {
             currentClick.current = nowClick.current - lastClick.current;
             
             //Check for valid inputs
-            if (/^[a-z0-9]$/.test(key) && currentClick.current > 200) {
+            if (/^[a-z0-9 ]$/.test(key) && currentClick.current > 200) {
                 //Simulate click on generate figures to generate a new plate
                 placeCirclesButton.current.click();
                 
@@ -741,7 +738,7 @@ function ColorTest() {
                 Gender: userGender.current,
                 Experience: userExp.current,
                 Motive: motive.current.value, 
-                UserKey: key, 
+                UserKey: key === " " ? "skip" : key, 
                 CorrectPress: motive.current.value === key ? "yes" : "no", 
                 NoiseLevel: activeTest.current === "noise" ? noiseLevel.current : "",
                 NoiseColor: activeTest.current === "noiseColor" ? "true" : "",
@@ -815,19 +812,28 @@ function ColorTest() {
 
                 //Reached final test
                 if(currentRadio === numConfusionLines && currentColorType === "tritan"){
+                    //Update progress
+                    progressCount.current += 4.75
+                    progressBar.current.innerHTML = "Progress: "+progressCount.current+" %";
+
                     //Change parameter or finish test if all parameters are done
                     switch(activeTest.current){
-                        case "size": activeTest.current = "background"; progressBar.current.innerHTML = "Progress: 15 %"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#BFBFBF"; break;
-                        case "background": activeTest.current = "noise"; progressBar.current.innerHTML = "Progress: 29 %"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#FFFFFF"; break;
-                        case "noise": activeTest.current = "border"; progressBar.current.innerHTML = "Progress: 43 %"; recieveColor("protan"); recieveRadio(1); break;
-                        case "border": activeTest.current = "noiseColor"; progressBar.current.innerHTML = "Progress: 61 %"; recieveColor("protan"); recieveRadio(1);  break;
-                        case "noiseColor": activeTest.current = "shape"; progressBar.current.innerHTML = "Progress: 79 %"; recieveColor("protan"); recieveRadio(1);   globalCurrentType = "Triangle"; globalRadiusChange = 6; break;
-                        case "shape": activeTest.current = "brightness"; progressBar.current.innerHTML = "Progress: 90 %"; recieveColor("protan"); recieveRadio(1); globalCurrentType = "Circle"; globalRadiusChange = 0; brightReduce.current = 12; break;
+                        case "size": activeTest.current = "background";  recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#BFBFBF"; break;
+                        case "background": activeTest.current = "noise"; recieveColor("protan"); recieveRadio(1); backgroundColor.current = "#FFFFFF"; break;
+                        case "noise": activeTest.current = "border"; recieveColor("protan"); recieveRadio(1); break;
+                        case "border": activeTest.current = "noiseColor"; recieveColor("protan"); recieveRadio(1);  break;
+                        case "noiseColor": activeTest.current = "shape"; recieveColor("protan"); recieveRadio(1);   globalCurrentType = "Triangle"; globalRadiusChange = 6; break;
+                        case "shape": activeTest.current = "brightness"; recieveColor("protan"); recieveRadio(1); globalCurrentType = "Circle"; globalRadiusChange = 0; brightReduce.current = 12; break;
                         case "brightness": fullReset(); brightReduce.current = 0; break;
                         default: break;
                     }
                 } else if(currentRadio === numConfusionLines){ //Reached final confusion line
                     
+                    //Update 4.5 % progress
+                    progressCount.current += 4.75;
+                    progressBar.current.innerHTML = "Progress: "+progressCount.current+" %";
+
+
                     //Cycle confusion lines and color tests
                     if(currentColorType === "protan"){
                         recieveColor("deutan");
@@ -909,7 +915,6 @@ function ColorTest() {
     
     return (
         <div>
-        <div ref={svgDiv}></div>
 
         <div ref={loading}>
             <h1 style={{ textAlign: "center" }}>Loading...</h1>
@@ -942,8 +947,7 @@ function ColorTest() {
 
                 <p style={{width:"40%", display:"inline-block"}}>
                 This test will challenge your color vision, even if you think you have good color vision! As you take the test, 
-                it will adapt based on your performance. Simply use the <b><i>keyboard</i></b> to match the displayed lower case letter or number during the test. 
-                If the displayed number or letter is difficult or nearly impossible to see, make your best guess anyway. 
+                it will adapt based on your performance. Simply use the <b>keyboard</b> to match the displayed <b>lower case letter or number</b> during the test. 
                 <br></br><br></br>
 
                 The test is anonymous and the data gathered will be used to aid my master's thesis. 
@@ -958,10 +962,10 @@ function ColorTest() {
                 <img src={redgreen}  width="25%" alt=""/>
 
                 <form ref={startForm}>
-                <div className="containerRadio">
+                <div className="containerRadio" style={{paddingLeft:"70px"}}>
                     
                     
-                    <div className="radioDiv" style={{flex:"0.5"}}>
+                    <div className="radioDiv">
                             <h3 title="Why do I ask for this?
                                         People who have a lot of experience within color science and color tests might perform better">
                                 How experienced are you within the field of color science: <span style={{cursor:"help"}}>ⓘ</span>  
@@ -974,7 +978,7 @@ function ColorTest() {
                         </div>
                     </div>
 
-                    <div className="radioDiv" style={{flex:"0.5"}}>
+                    <div className="radioDiv">
                         <h3 title="Why do I ask for this?
                             Males have a higher chance of having a type of color vision deficiency, so this will be used to look for abnormalities in the data">
                             Select your gender at birth: <span style={{cursor:"help"}}>ⓘ</span><br></br>
@@ -985,38 +989,6 @@ function ColorTest() {
                             <label>Female<input name="gender" type="radio" onChange={() => userGender.current = "female"} required></input></label><br></br>
                             <label>No answer<input name="gender" type="radio" onChange={() => userGender.current = "no answer"}></input></label><br></br>
                         </div>
-                    </div>
-
-
-                    <div style={{flex:0.2, alignSelf:"center", marginTop:"-150px"}}>
-                        <h3 className="rainbowTextDelay">
-                            Start test
-                        </h3>
-                        <button type="submit" onClick={(e) => {
-                            
-                            // Check if the form is invalid 
-                            if (!e.target.closest("form").checkValidity()) {
-                                return;
-                            } 
-                            e.preventDefault();
-
-                            startTest.current = true
-                            //Hide start page
-                            startPage.current.style.display = "none";
-                            svgCircles.current.style.display = "block";
-                            wrapper.current.style.display = "none";
-                            progressBar.current.style.display = "block";
-
-                            //Start plate timers
-                            startPlateTime.current = Date.now();
-                            startTotalTime.current = Date.now();
-
-                            //Spam timer
-                            lastClick.current = Date.now();
-
-                            startAfkTimer();
-
-                        }}>Start</button>
                     </div>
 
                     <div className="radioDiv">
@@ -1032,6 +1004,38 @@ function ColorTest() {
                             <label>Over 80<input name="age" type="radio" onChange={(e) => userAge.current = "over 80"} required></input></label><br></br>
                             <label>No answer<input name="age" type="radio" onChange={(e) => userAge.current = "no answer"}></input></label>
                         </div>
+                    </div>
+
+                    <div className="radioDiv" style={{marginRight:"150px", marginLeft:"-50px"}}>
+                        <h3 className="rainbowTextDelay">
+                            Start test
+                        </h3>
+                        <button type="submit" onClick={(e) => {
+                            
+                            // Check if the form is invalid 
+                            if (!e.target.closest("form").checkValidity()) {
+                                return;
+                            } 
+                            e.preventDefault();
+
+                            startTest.current = true
+                            //Hide start page
+                            startPage.current.style.display = "none";
+                            instructionPlate.current.style.display = "block";
+                            svgCircles.current.style.display = "block";
+                            wrapper.current.style.display = "none";
+                            progressBar.current.style.display = "block";
+
+                            //Start plate timers
+                            startPlateTime.current = Date.now();
+                            startTotalTime.current = Date.now();
+
+                            //Spam timer
+                            lastClick.current = Date.now();
+
+                            startAfkTimer();
+
+                        }}>Start</button>
                     </div>
 
                     
@@ -1259,6 +1263,11 @@ function ColorTest() {
             </div>
         </div>
         <canvas ref={plate} style={{display:"none"}} width="400" height="400"></canvas>
+        <p ref={instructionPlate} style={{display:"none", textAlign:"center"}}>
+            Press the <b>letter or number</b> on the <b>keyboard</b> to match the motive. <br></br>
+            If it is difficult to see, make your best guess. <br></br>
+            If it is impossible to see, press <b>spacebar to skip</b> or take your best guess anyway. <br></br> 
+        </p>
         </div>
     );
 }

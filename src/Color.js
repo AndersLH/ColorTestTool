@@ -126,6 +126,12 @@ function Color({  srgbValue,
   const newW = xy2uv(whitePoint1931.x,whitePoint1931.y);
   const whitePoint1976 = {x:newW.u, y:newW.v};
 
+  //Equal energy white point
+  const energyPoint = {x:0.333, y:0.333}
+  const newEP = xy2uv(energyPoint.x, energyPoint.y)
+  const energyPoint1976 = {x:newEP.u, y:newEP.v}
+  
+
   //Coordinates for creating sRGB triangle
   const sRGBTriangle1931 = {
     a: {x: 0.64, y: 0.33}, 
@@ -156,9 +162,9 @@ function Color({  srgbValue,
   const newDeu = xy2uv(deutan1931.x1,deutan1931.y1);
   const newTri = xy2uv(tritan1931.x1,tritan1931.y1);
 
-  const protan = {x1: newPro.u, y1: newPro.v, yMin: 0.15, yMax: 0.53, xyStop:0.05}; 
+  const protan = {x1: newPro.u, y1: newPro.v, yMin: 0.15, yMax: 0.53, xyStop:0.00}; 
   const deutan = {x1: newDeu.u, y1: newDeu.v, yMin: 0.15, yMax: 0.46, xyStop:0.6}; 
-  const tritan = {x1: newTri.u, y1: newTri.v, yMin: 0.1, yMax: 0.35, xyStop:0.6};
+  const tritan = {x1: newTri.u, y1: newTri.v, yMin: 0.02, yMax: 0.35, xyStop:0.6};
 
   //Temporary store lines and wait for refresh button generate new ones
   let [generateNewCF, setGenerateNewCF] = useState(true);
@@ -258,7 +264,7 @@ function Color({  srgbValue,
   }
 
   //Calculate an even random split of confusion lines generated
-  function calcConfusionLine(i, min, max){
+  function calcConfusionLine(i, min, max, type){
     //Find the section for each line to place itself in
     let split = (max-min)/numConfusionLines;
 
@@ -266,6 +272,40 @@ function Color({  srgbValue,
     let newMin = split*i + min;
     let newMax = split*(i+1) + min;
     let retNum =  (newMax - newMin) + newMin; //Math.random() * ... for random confusion lines
+
+
+    //Could be made a little more compact...
+    //Set a confusion line to go through the equal energy point
+    if(i === numConfusionLines-2 && numConfusionLines > 1 && type === "p"){
+
+      //Calculate the continuation of the line after the energy equal point
+      const slope = (energyPoint1976.y - protan.y1) / (energyPoint1976.x - protan.x1);
+  
+      //Straight line equation to calculate y at xyStop.
+      retNum = protan.y1 + slope * (protan.xyStop - protan.x1);
+    }
+
+    if(i === numConfusionLines-2 && numConfusionLines > 1 && type === "d"){
+
+      //Calculate the continuation of the line after the energy equal point
+      const slope = (energyPoint1976.y - deutan.y1) / (energyPoint1976.x - deutan.x1);
+  
+      //Straight line equation to calculate y at xyStop.
+      retNum = deutan.y1 + slope * (deutan.xyStop - deutan.x1);
+    }
+
+    if(i === numConfusionLines-2 && numConfusionLines > 1 && type === "t"){
+
+      //Calculate the continuation of the line after the energy equal point
+      const slope = (energyPoint1976.y - tritan.y1) / (energyPoint1976.x - tritan.x1);
+  
+      //Straight line equation to calculate x at xyStop.
+      retNum = tritan.x1 + (tritan.xyStop - tritan.y1) / slope;
+    }
+
+
+
+
 
     //Add to array for storage if refresh button has been pressed
     if (generateNewCF && decoyState){
@@ -276,7 +316,7 @@ function Color({  srgbValue,
         setDecoyState(false);
       }
     }    
-      return cfList[i];
+    return cfList[i];
   }
 
 
@@ -404,9 +444,9 @@ function Color({  srgbValue,
     let dot;
     let tValue = 0.1; 
     if(xCoor){ //Checks if x2,y2 coordinates need to be swapped depending on the confusion line, tritan differs from deutan and protan
-      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2),stat,tValue, i, j, colRadius, noiseLevel, type);
+      dot = interpolate(x1,y1,calcConfusionLine(i,x2,y2, type),stat,tValue, i, j, colRadius, noiseLevel, type);
     } else {
-      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2),tValue, i, j, colRadius, noiseLevel, type);
+      dot = interpolate(x1,y1,stat,calcConfusionLine(i,x2,y2, type),tValue, i, j, colRadius, noiseLevel, type);
     }
 
     
@@ -572,7 +612,7 @@ function Color({  srgbValue,
                       x1={`${10 + (100 * protan.x1) * 0.8}%`} 
                       y1={`${10 + (100 - (100 * protan.y1)) * 0.8}%`} 
                       x2={`${10 + (100 * protan.xyStop) * 0.8}%`} 
-                      y2={`${10 + (100 - (100 * calcConfusionLine(i,protan.yMin,protan.yMax))) * 0.8}%`} //0.14 and 0.67 values found manually through testing
+                      y2={`${10 + (100 - (100 * calcConfusionLine(i,protan.yMin,protan.yMax, "p"))) * 0.8}%`} 
                       /> 
                       {
                       Array.from(
@@ -615,7 +655,7 @@ function Color({  srgbValue,
                       x1={`${10 + (100 * deutan.x1) * 0.8}%`} 
                       y1={`${10 + (100 - (100 * deutan.y1)) * 0.8}%`} 
                       x2={`${10 + (100 * deutan.xyStop) * 0.8}%`} 
-                      y2={`${10 + (100 - (100 * calcConfusionLine(i,deutan.yMin,deutan.yMax))) * 0.8}%`} 
+                      y2={`${10 + (100 - (100 * calcConfusionLine(i,deutan.yMin,deutan.yMax, "d"))) * 0.8}%`} 
                       /> 
                       {
                       Array.from(
@@ -657,7 +697,7 @@ function Color({  srgbValue,
                       id={i+"-line"}
                       x1={`${10 + (100 * tritan.x1) * 0.8}%`} 
                       y1={`${10 + (100 - (100 * tritan.y1)) * 0.8}%`} 
-                      x2={`${10 + (100 * calcConfusionLine(i,tritan.yMin,tritan.yMax)) * 0.8}%`}
+                      x2={`${10 + (100 * calcConfusionLine(i,tritan.yMin,tritan.yMax, "t")) * 0.8}%`}
                       y2={`${10 + (100 - (100 * tritan.xyStop)) * 0.8}%`} />
                     {
                     Array.from(
@@ -734,6 +774,8 @@ function Color({  srgbValue,
 
         {/* White point D65 Wikipedia, find good paper instead  */}
         <circle style={{stroke:'grey', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * whitePoint1976.x) * 0.8}%`} cy={`${10 + (100 - (100 * whitePoint1976.y)) * 0.8}%`} />
+        {/* Energy point */}
+        <circle style={{stroke:'red', strokeWidth:'2'}} r={"2"} cx={`${10 + (100 * energyPoint1976.x) * 0.8}%`} cy={`${10 + (100 - (100 * energyPoint1976.y)) * 0.8}%`} />
        
 
 
