@@ -582,7 +582,6 @@ function ColorTest() {
     function removeEndScreen(){
         //Hide start page
         startPage.current.style.display = "block";
-        instructionPlate.current.style.display = "none";
         endPage.current.style.display = "none";
         svgCircles.current.style.display = "none";
     
@@ -609,6 +608,7 @@ function ColorTest() {
     function fullReset(){
 
         endPage.current.style.display = "block";
+        instructionPlate.current.style.display = "none";
         svgCircles.current.style.display = "none";
         startTest.current = false;
 
