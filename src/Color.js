@@ -825,55 +825,7 @@ function Color({
         >
           {toggleTable ? "ON" : "OFF"}
         </button> */}
-				<label>
-					Brightness:
-					<input
-						type="range"
-						min="0"
-						max="100"
-						value={sliderBright}
-						id="briSlide"
-						onMouseUp={() => {
-							if (listConfusionCoords.current === null) {
-								return;
-							}
-							listConfusionColors.current = [];
-							for (let m = 0; m < globalNumColors; m++) {
-								listConfusionColors.current.push(
-									srgbToHex(
-										calcSRGB(
-											document
-												.getElementById(
-													`${
-														listConfusionCoords.current -
-														1
-													}-line-${m}-dot`
-												)
-												.getAttribute("data-coord-x") *
-												100,
-											document
-												.getElementById(
-													`${
-														listConfusionCoords.current -
-														1
-													}-line-${m}-dot`
-												)
-												.getAttribute("data-coord-y") *
-												100,
-											listConfusionCoords.current - 1,
-											0
-										)
-									)
-								);
-							}
-							srgbValue(listConfusionColors.current);
-						}}
-						onChange={(e) => {
-							changeBrightness(e);
-						}}
-					></input>
-					{sliderBright}
-				</label>
+				
 			</div>
 
 			<div
@@ -1280,9 +1232,58 @@ function Color({
 			{/* Color box for calibrating screen color */}
 			<p style={{ marginTop: "-180px" }}>
 				Click on the chromaticity diagram to display a color below.
-				(Brightness is automatically adjusted to stay within gamut, but
-				can be manually adjusted above the chromaticity diagram)
+				Brightness is automatically adjusted to stay within gamut, but
+				can be manually adjusted with the slider (but it will still never go out of gamut)
 			</p>
+			<label>
+					Brightness:
+					<input
+						type="range"
+						min="0"
+						max="100"
+						value={sliderBright}
+						id="briSlide"
+						onMouseUp={() => {
+							if (listConfusionCoords.current === null) {
+								return;
+							}
+							listConfusionColors.current = [];
+							for (let m = 0; m < globalNumColors; m++) {
+								listConfusionColors.current.push(
+									srgbToHex(
+										calcSRGB(
+											document
+												.getElementById(
+													`${
+														listConfusionCoords.current -
+														1
+													}-line-${m}-dot`
+												)
+												.getAttribute("data-coord-x") *
+												100,
+											document
+												.getElementById(
+													`${
+														listConfusionCoords.current -
+														1
+													}-line-${m}-dot`
+												)
+												.getAttribute("data-coord-y") *
+												100,
+											listConfusionCoords.current - 1,
+											0
+										)
+									)
+								);
+							}
+							srgbValue(listConfusionColors.current);
+						}}
+						onChange={(e) => {
+							changeBrightness(e);
+						}}
+					></input>
+					{sliderBright}
+				</label>
 			<div
 				ref={colorBox}
 				style={{
