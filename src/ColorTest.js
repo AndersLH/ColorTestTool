@@ -138,7 +138,7 @@ function ColorTest() {
     let startForm = useRef(null);
 
     //AFK timer
-    const timeoutAfk = useRef(1000000);
+    const timeoutAfk = useRef(60000);
     let afkTimer = useRef(false);
 
     //End screen timer
