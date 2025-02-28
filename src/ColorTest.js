@@ -674,10 +674,10 @@ function ColorTest() {
             }
 
             //Toggle settings during testing (turn off for live data collection)
-            if (/^'$/.test(key)) {
-                wrapper.current.style.display = wrapper.current.style.display === "none" ? "block" : "none";
-                return;
-            }
+            // if (/^'$/.test(key)) {
+            //     wrapper.current.style.display = wrapper.current.style.display === "none" ? "block" : "none";
+            //     return;
+            // }
             
             //Prevent errors from starting too early
             if(currentColorList.length === 0){
@@ -962,7 +962,7 @@ function ColorTest() {
                 <img src={redgreen}  width="25%" alt=""/>
 
                 <form ref={startForm}>
-                <div className="containerRadio" style={{paddingLeft:"70px"}}>
+                <div className="containerRadio" style={{paddingLeft:"20px"}}>
                     
                     
                     <div className="radioDiv">
@@ -1006,7 +1006,7 @@ function ColorTest() {
                         </div>
                     </div>
 
-                    <div className="radioDiv" style={{marginRight:"150px", marginLeft:"-50px"}}>
+                    <div className="radioDiv" style={{marginRight:"90px", marginLeft:"-50px"}}>
                         <h3 className="rainbowTextDelay">
                             Start test
                         </h3>
