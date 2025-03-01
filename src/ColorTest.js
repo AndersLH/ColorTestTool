@@ -1462,7 +1462,7 @@ function ColorTest() {
 							<br />
 
 							<hr />
-							<b>Miscellaneous</b>
+							<b>Miscellaneous (click re-generate to apply changes in this category)</b>
 							<div ref={minTxt}>Min Radius: 3</div>
 							<input
 								type="range"

@@ -1110,7 +1110,7 @@ function Color({
 						x="50%"
 						y="98%"
 					>
-						x
+						u'
 					</text>
 					<line
 						style={{ stroke: "black", strokeWidth: "2" }}
@@ -1125,7 +1125,7 @@ function Color({
 						x="2%"
 						y="55%"
 					>
-						y
+						v'
 					</text>
 					<line
 						style={{ stroke: "black", strokeWidth: "2" }}
@@ -1184,7 +1184,7 @@ function Color({
 								cursor: "default",
 							}}
 							x={`${10 + clickPosition.x * 0.8}%`}
-							y={`${11.7 + clickPosition.y * 0.8}%`}
+							y={`${10.8	 + clickPosition.y * 0.8}%`}
 						>
 							x
 						</text>
@@ -1310,11 +1310,11 @@ function Color({
 			>
 				u': {(clickPosition.x / 100).toFixed(3)}, v':
 				{(1 - clickPosition.y / 100).toFixed(3)}, sRGB:
-				{calcSRGBClick()[0] +
+				({calcSRGBClick()[0] +
 					", " +
 					calcSRGBClick()[1] +
 					", " +
-					calcSRGBClick()[2]}
+					calcSRGBClick()[2]})
 			</p>
 			<p>Ignore everything below this:</p>
 		</div>
