@@ -1,6 +1,6 @@
-# Project related to IMT4894
+# Project related to IMT4894 and master's thesis
 
-## Method for Testing People’s Color Vision
+## Method for Testing People’s Color Vision - The IRIS
 
 ### Install Node.js and npm
 
